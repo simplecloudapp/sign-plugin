@@ -1,0 +1,19 @@
+[versions]
+kotlin = "1.8.0"
+shadow = "8.1.1"
+grpcVersion = "1.61.0"
+grpcKotlinVersion = "1.4.1"
+simpleCloudController = "0.0.27-EXPERIMENTAL"
+
+[libraries]
+kotlinJvm = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+grpcStub = { module = "io.grpc:grpc-stub", version.ref = "grpcVersion" }
+grpcKotlinStub = { module = "io.grpc:grpc-kotlin-stub", version.ref = "grpcKotlinVersion" }
+grpcNettyShaded = { module = "io.grpc:grpc-netty-shaded", version.ref = "grpcVersion" }
+
+simpleCloudController = { module = "app.simplecloud.controller:controller-shared", version.ref = "simpleCloudController" }
+
+[plugins]
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
