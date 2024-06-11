@@ -1,5 +1,5 @@
 [versions]
-kotlin = "1.8.0"
+kotlin = "2.0.0"
 shadow = "8.1.1"
 grpcVersion = "1.61.0"
 grpcKotlinVersion = "1.4.1"
@@ -12,7 +12,11 @@ grpcStub = { module = "io.grpc:grpc-stub", version.ref = "grpcVersion" }
 grpcKotlinStub = { module = "io.grpc:grpc-kotlin-stub", version.ref = "grpcKotlinVersion" }
 grpcNettyShaded = { module = "io.grpc:grpc-netty-shaded", version.ref = "grpcVersion" }
 
-simpleCloudController = { module = "app.simplecloud.controller:controller-shared", version.ref = "simpleCloudController" }
+simpleCloudControllerApi = { module = "app.simplecloud.controller:controller-api", version.ref = "simpleCloudController" }
+simpleCloudControllerShared = { module = "app.simplecloud.controller:controller-shared", version.ref = "simpleCloudController" }
+
+[bundles]
+simpleCloudController = ["simpleCloudControllerApi", "simpleCloudControllerShared"]
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

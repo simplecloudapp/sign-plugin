@@ -1,3 +1,3 @@
 dependencies {
-    implementation(rootProject.libs.simpleCloudController)
+    implementation(rootProject.libs.bundles.simpleCloudController)
 }
