@@ -1,0 +1,5 @@
+name: SimpleCloud-Signs
+version: 1.0
+author: Fllip
+description: A simple plugin that adds signs to SimpleCloud
+main: app.simplecloud.plugin.sign.paper.PaperSignsPlugin
