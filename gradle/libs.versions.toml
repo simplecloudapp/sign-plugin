@@ -4,6 +4,9 @@ shadow = "8.1.1"
 grpcVersion = "1.61.0"
 grpcKotlinVersion = "1.4.1"
 simpleCloudController = "0.0.27-EXPERIMENTAL"
+# implementation("org.incendo:cloud-paper:2.0.0-beta.8")
+paper = "1.20.6-R0.1-SNAPSHOT"
+cloudCommands = "2.0.0-beta.8"
 
 [libraries]
 kotlinJvm = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
@@ -11,12 +14,16 @@ kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotli
 grpcStub = { module = "io.grpc:grpc-stub", version.ref = "grpcVersion" }
 grpcKotlinStub = { module = "io.grpc:grpc-kotlin-stub", version.ref = "grpcKotlinVersion" }
 grpcNettyShaded = { module = "io.grpc:grpc-netty-shaded", version.ref = "grpcVersion" }
+paperApi = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
+cloudMinecraftExtras = { module = "org.incendo:cloud-minecraft-extras", version.ref = "cloudCommands" }
+cloudPaper = { module = "org.incendo:cloud-paper", version.ref = "cloudCommands" }
 
 simpleCloudControllerApi = { module = "app.simplecloud.controller:controller-api", version.ref = "simpleCloudController" }
 simpleCloudControllerShared = { module = "app.simplecloud.controller:controller-shared", version.ref = "simpleCloudController" }
 
 [bundles]
 simpleCloudController = ["simpleCloudControllerApi", "simpleCloudControllerShared"]
+cloudPaper = ["cloudPaper", "cloudMinecraftExtras"]
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
