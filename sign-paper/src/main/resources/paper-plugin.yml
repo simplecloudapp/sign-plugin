@@ -3,3 +3,5 @@ version: 1.0
 author: Fllip
 description: A simple plugin that adds signs to SimpleCloud
 main: app.simplecloud.plugin.sign.paper.PaperSignsPlugin
+api-version: "1.20.6"
+bootstrapper: app.simplecloud.plugin.sign.paper.PaperSignsPluginBootstrap
