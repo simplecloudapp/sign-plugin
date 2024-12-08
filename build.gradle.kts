@@ -31,16 +31,16 @@ subprojects {
     apply(plugin = "com.github.johnrengelman.shadow")
 
     dependencies {
-        testImplementation(rootProject.libs.kotlinTest)
-        implementation(rootProject.libs.kotlinJvm)
+        testImplementation(rootProject.libs.kotlin.test)
+        implementation(rootProject.libs.kotlin.jvm)
     }
 
     kotlin {
-        jvmToolchain(21)
+        jvmToolchain(22)
     }
 
     tasks.withType<KotlinCompile> {
-        kotlinOptions.jvmTarget = "21"
+        kotlinOptions.jvmTarget = "22"
     }
 
     tasks.named("shadowJar", ShadowJar::class) {
@@ -68,5 +68,5 @@ tasks.test {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(22)
 }

@@ -24,21 +24,32 @@ class LocationsRepository<T>(
     fun saveLocation(groupName: String, location: T) {
         val config = find(groupName) ?: LocationsConfig(serverGroup = groupName)
         val unmappedLocation = locationMapper.unmap(location)
+
+        println(unmappedLocation)
+        unmappedLocation.forEach { t, u ->
+            println("$t: $u ${u::class}")
+        }
+
         save(
             config.copy(
                 locations = listOf(*config.locations.toTypedArray(), unmappedLocation)
             )
         )
+        println("Saved location $unmappedLocation")
     }
 
-    fun removeLocation(groupName: String, location: T) {
-        val config = find(groupName) ?: return
+    fun removeLocation(location: T) {
+        val config = findByLocation(location) ?: return
         val unmappedLocation = locationMapper.unmap(location)
         save(
             config.copy(
                 locations = config.locations.filter { it != unmappedLocation }
             )
         )
+    }
+
+    fun findByLocation(location: T): LocationsConfig? {
+        return entities.values.find { it.locations.any { it == locationMapper.unmap(location) } }
     }
 
 }
