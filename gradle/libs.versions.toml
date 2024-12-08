@@ -3,7 +3,7 @@ kotlin = "2.0.0"
 shadow = "8.1.1"
 grpc-version = "1.61.0"
 grpc-kotlin-version = "1.4.1"
-simplecloud-controller = "0.0.30-EXPERIMENTAL"
+simplecloud-controller = "0.0.30-dev.95b1794"
 # implementation("org.incendo:cloud-paper:2.0.0-beta.8")
 paper = "1.21.1-R0.1-SNAPSHOT"
 cloud-commands = "2.0.0-beta.10"

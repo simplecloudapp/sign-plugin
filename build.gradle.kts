@@ -23,6 +23,7 @@ allprojects {
             url = uri("https://repo.papermc.io/repository/maven-public/")
         }
         maven("https://buf.build/gen/maven")
+        maven("https://repo.simplecloud.app/snapshots")
     }
 }
 
@@ -36,11 +37,11 @@ subprojects {
     }
 
     kotlin {
-        jvmToolchain(22)
+        jvmToolchain(21)
     }
 
     tasks.withType<KotlinCompile> {
-        kotlinOptions.jvmTarget = "22"
+        kotlinOptions.jvmTarget = "21"
     }
 
     tasks.named("shadowJar", ShadowJar::class) {
@@ -68,5 +69,5 @@ tasks.test {
 }
 
 kotlin {
-    jvmToolchain(22)
+    jvmToolchain(21)
 }
