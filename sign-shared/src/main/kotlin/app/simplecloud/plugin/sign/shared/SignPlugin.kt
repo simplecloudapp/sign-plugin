@@ -2,6 +2,7 @@ package app.simplecloud.plugin.sign.shared
 
 import app.simplecloud.controller.api.ControllerApi
 import app.simplecloud.controller.shared.server.Server
+import app.simplecloud.plugin.sign.shared.config.FrameConfig
 import app.simplecloud.plugin.sign.shared.config.LayoutConfig
 import app.simplecloud.plugin.sign.shared.config.LocationsConfig
 import app.simplecloud.plugin.sign.shared.repository.LayoutRepository
@@ -28,7 +29,9 @@ class SignPlugin<T>(
 
     fun start() {
         locationsRepository.load()
-        layoutRepository.load()
+        val layouts = layoutRepository.load()
+
+        println("Loaded ${layouts.size} Sign Layouts")
 
         serverCache.startCacheJob()
         startUpdateSignJob()

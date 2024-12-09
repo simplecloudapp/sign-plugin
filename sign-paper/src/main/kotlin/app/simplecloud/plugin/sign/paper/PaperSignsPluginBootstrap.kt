@@ -6,11 +6,13 @@ import app.simplecloud.plugin.sign.shared.SignUpdater
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.plugin.bootstrap.BootstrapContext
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap
+import io.papermc.paper.plugin.bootstrap.PluginProviderContext
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.Sign
 import org.bukkit.block.sign.Side
+import org.bukkit.plugin.java.JavaPlugin
 import org.incendo.cloud.execution.ExecutionCoordinator
 import org.incendo.cloud.paper.PaperCommandManager
 
@@ -49,6 +51,10 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
         context.pluginSource
 
         SignCommand(signPlugin, commandManager).register()
+    }
+
+    override fun createPlugin(context: PluginProviderContext): JavaPlugin {
+        return plugin
     }
 
 }
