@@ -29,7 +29,7 @@ allprojects {
 
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
-    apply(plugin = "com.github.johnrengelman.shadow")
+    apply(plugin = "com.gradleup.shadow")
 
     dependencies {
         testImplementation(rootProject.libs.kotlin.test)

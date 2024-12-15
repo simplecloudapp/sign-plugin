@@ -2,7 +2,6 @@ package app.simplecloud.plugin.sign.shared
 
 import app.simplecloud.controller.api.ControllerApi
 import app.simplecloud.controller.shared.server.Server
-import app.simplecloud.plugin.sign.shared.config.FrameConfig
 import app.simplecloud.plugin.sign.shared.config.LayoutConfig
 import app.simplecloud.plugin.sign.shared.config.LocationsConfig
 import app.simplecloud.plugin.sign.shared.repository.LayoutRepository
@@ -12,7 +11,7 @@ import kotlinx.coroutines.*
 import java.nio.file.Path
 
 class SignPlugin<T>(
-    private val controllerApi: ControllerApi.Future,
+    private val controllerApi: ControllerApi.Coroutine,
     private val directoryPath: Path,
     private val locationMapper: LocationMapper<T>,
     private val signUpdater: SignUpdater<T>
@@ -33,12 +32,15 @@ class SignPlugin<T>(
 
         println("Loaded ${layouts.size} Sign Layouts")
 
+
         serverCache.startCacheJob()
         startUpdateSignJob()
     }
 
     fun getLayout(server: Server?): LayoutConfig {
-        return layoutRepository.getAll().firstOrNull { it.rule.checker.check(server) } ?: LayoutConfig()
+        return layoutRepository.getAll()
+            .sortedBy { it.priority }
+            .firstOrNull { it.rule.checker.check(server) } ?: LayoutConfig()
     }
 
     fun getCloudSign(location: T): CloudSign<T>? {
@@ -46,8 +48,7 @@ class SignPlugin<T>(
     }
 
     private fun startUpdateSignJob() {
-
-        CoroutineScope(Dispatchers.Default).launch {
+        CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
                 updateLayoutIndexes()
                 updateSigns()
@@ -100,7 +101,7 @@ class SignPlugin<T>(
         }
 
         val currentFrame = layout.frames[currentFrameIndex] ?: return
-        signUpdater.update(cloudSign.location, currentFrame)
+        signUpdater.update(cloudSign, currentFrame)
     }
 
     private fun updateLayoutIndexes() {

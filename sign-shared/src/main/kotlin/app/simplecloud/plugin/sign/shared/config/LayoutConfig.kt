@@ -8,6 +8,7 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable
 data class LayoutConfig(
     val name: String = "",
     val rule: SignRule = SignRule.EMPTY,
+    val priority: Int = 0,
     val displayName: String = "%group%-%numerical-id%",
     val frameUpdateInterval: Long = 500,
     val frames: List<FrameConfig> = listOf(),

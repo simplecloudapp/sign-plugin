@@ -7,34 +7,33 @@ import com.google.common.collect.Multimaps
 import kotlinx.coroutines.*
 
 class ServerCache<T>(
-    private val controllerApi: ControllerApi.Future,
+    private val controllerApi: ControllerApi.Coroutine,
     private val locationsRepository: LocationsRepository<T>
 ) {
 
     private val serverCache = Multimaps.synchronizedMultimap(Multimaps.newListMultimap<String, Server>(mutableMapOf(), ::arrayListOf))
 
     fun startCacheJob(): Job {
-        return CoroutineScope(Dispatchers.Default).launch {
+        return CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
                 updateCache()
-                delay(2000)
+                delay(1000)
             }
         }
     }
 
-    fun getServersByGroup(group: String): List<Server> {
-        return serverCache[group].orEmpty().toList()
-    }
+        fun getServersByGroup(group: String): List<Server> {
+            return serverCache[group].orEmpty().toList()
+        }
 
-    private fun updateCache() {
+    private suspend fun updateCache() {
         locationsRepository.getAll()
             .map { it.serverGroup }
             .toSet()
             .forEach { group ->
-                controllerApi.getServers().getServersByGroup(group).thenAccept {
-                    serverCache.replaceValues(group, it)
-                }
+                val servers = controllerApi.getServers().getServersByGroup(group)
+                serverCache.replaceValues(group, servers)
             }
-    }
+        }
 
-}
+    }

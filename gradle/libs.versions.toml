@@ -1,10 +1,9 @@
 [versions]
 kotlin = "2.0.0"
-shadow = "8.1.1"
+shadow = "8.3.3"
 grpc-version = "1.61.0"
 grpc-kotlin-version = "1.4.1"
-simplecloud-controller = "0.0.30-dev.95b1794"
-# implementation("org.incendo:cloud-paper:2.0.0-beta.8")
+simplecloud-controller = "0.0.30-dev.e3e27fc"
 paper = "1.21.1-R0.1-SNAPSHOT"
 cloud-commands = "2.0.0-beta.10"
 
@@ -19,12 +18,10 @@ cloud-minecraft-extras = { module = "org.incendo:cloud-minecraft-extras", versio
 cloud-paper = { module = "org.incendo:cloud-paper", version.ref = "cloud-commands" }
 
 simplecloud-controller-api = { module = "app.simplecloud.controller:controller-api", version.ref = "simplecloud-controller" }
-simplecloud-controller-shared = { module = "app.simplecloud.controller:controller-shared", version.ref = "simplecloud-controller" }
 
 [bundles]
-simplecloud-controller = ["simplecloud-controller-api", "simplecloud-controller-shared"]
 cloud-paper = ["cloud-paper", "cloud-minecraft-extras"]
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
