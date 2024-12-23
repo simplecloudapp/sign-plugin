@@ -11,7 +11,7 @@ import kotlinx.coroutines.*
 import java.nio.file.Path
 
 class SignManager<T>(
-    controllerApi: ControllerApi.Coroutine,
+    val controllerApi: ControllerApi.Coroutine,
     directoryPath: Path,
     private val locationMapper: LocationMapper<T>,
     private val signUpdater: SignUpdater<T>

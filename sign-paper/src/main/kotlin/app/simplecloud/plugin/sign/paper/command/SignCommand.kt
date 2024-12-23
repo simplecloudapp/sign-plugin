@@ -150,15 +150,15 @@ class SignCommand(private var bootstrap: PaperSignsPluginBootstrap) {
                             val signAmount = locations!!.size
                             locations.forEach { location ->
                                 unregisterSign(bootstrap.signManager.mapLocation(location))
-
-                                player.sendMessage(
-                                    MiniMessage.miniMessage().deserialize(
-                                        SignMessageConfig.SIGN_REMOVE_GROUP_SUCCESS,
-                                        Placeholder.unparsed("amount", signAmount.toString()),
-                                        Placeholder.unparsed("group", group)
-                                    )
-                                )
                             }
+
+                            player.sendMessage(
+                                MiniMessage.miniMessage().deserialize(
+                                    SignMessageConfig.SIGN_REMOVE_GROUP_SUCCESS,
+                                    Placeholder.unparsed("amount", signAmount.toString()),
+                                    Placeholder.unparsed("group", group)
+                                )
+                            )
                         }
 
                         bootstrap.signManager.getCloudSignsByGroup(group)?.let { cloudSignList ->
