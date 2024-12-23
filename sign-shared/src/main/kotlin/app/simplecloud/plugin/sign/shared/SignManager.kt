@@ -63,9 +63,21 @@ class SignManager<T>(
         return locationsRepository.getAll().map { it.serverGroup }.toList()
     }
 
+    fun getLocationsByGroup(group: String): List<Map<String, String>>? {
+        return locationsRepository.find(group)?.locations
+    }
+
+    fun mapLocation(locationMap: Map<String, String>): T {
+        return locationMapper.map(locationMap)
+    }
+
     fun removeCloudSign(location: T) {
         cloudSigns.remove(location)
         locationsRepository.removeLocation(location)
+    }
+
+    fun exists(group: String): Boolean {
+        return locationsRepository.getAll().any { it.serverGroup == group }
     }
 
     private fun startUpdateSignJob() {

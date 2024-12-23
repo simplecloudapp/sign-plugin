@@ -5,7 +5,10 @@ import app.simplecloud.plugin.sign.paper.PaperSignsPluginBootstrap
 import app.simplecloud.plugin.sign.shared.config.SignMessageConfig
 import build.buf.gen.simplecloud.controller.v1.ServerType
 import io.grpc.StatusException
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
@@ -20,7 +23,6 @@ import org.incendo.cloud.paper.util.sender.Source
 import org.incendo.cloud.parser.standard.StringParser
 import org.incendo.cloud.suggestion.BlockingSuggestionProvider
 import org.incendo.cloud.suggestion.Suggestion
-import java.lang.Runnable
 
 class SignCommand(private var bootstrap: PaperSignsPluginBootstrap) {
 
@@ -63,16 +65,14 @@ class SignCommand(private var bootstrap: PaperSignsPluginBootstrap) {
                         CoroutineScope(Dispatchers.IO).launch {
                             kotlin.runCatching {
                                 bootstrap.controllerApi.getGroups().getGroupByName(group)
-                                withContext(Dispatchers.Main) {
-                                    bootstrap.signManager.register(group, location)
+                                bootstrap.signManager.register(group, location)
 
-                                    player.sendMessage(
-                                        MiniMessage.miniMessage().deserialize(
-                                            SignMessageConfig.SIGN_CREATE_SUCCESS,
-                                            Placeholder.unparsed("group", group)
-                                        )
+                                player.sendMessage(
+                                    MiniMessage.miniMessage().deserialize(
+                                        SignMessageConfig.SIGN_CREATE_SUCCESS,
+                                        Placeholder.unparsed("group", group)
                                     )
-                                }
+                                )
                             }.onFailure { exception ->
                                 if (exception is StatusException) {
                                     player.sendMessage(
@@ -134,32 +134,39 @@ class SignCommand(private var bootstrap: PaperSignsPluginBootstrap) {
                     val player = it.sender().source()
                     val group = it.getOrDefault("group", "")
 
+                    if (bootstrap.signManager.exists(group).not()) {
+                        player.sendMessage(
+                            MiniMessage.miniMessage().deserialize(
+                                SignMessageConfig.SIGN_REMOVE_GROUP_NOT_REGISTERED,
+                                Placeholder.unparsed("group", group)
+                            )
+                        )
+                        return@handler
+                    }
+
                     // ---- Remove all CloudSigns associated with group ----//
                     if (group.isNotBlank()) {
-                        bootstrap.signManager.getCloudSignsByGroup(group)?.let { cloudSignList ->
-                            val signAmount = cloudSignList.size
+                        bootstrap.signManager.getLocationsByGroup(group).let { locations ->
+                            val signAmount = locations!!.size
+                            locations.forEach { location ->
+                                unregisterSign(bootstrap.signManager.mapLocation(location))
 
+                                player.sendMessage(
+                                    MiniMessage.miniMessage().deserialize(
+                                        SignMessageConfig.SIGN_REMOVE_GROUP_SUCCESS,
+                                        Placeholder.unparsed("amount", signAmount.toString()),
+                                        Placeholder.unparsed("group", group)
+                                    )
+                                )
+                            }
+                        }
+
+                        bootstrap.signManager.getCloudSignsByGroup(group)?.let { cloudSignList ->
                             cloudSignList.forEach { cloudSign ->
                                 run {
                                     unregisterSign(cloudSign.location)
                                 }
                             }
-
-                            player.sendMessage(
-                                MiniMessage.miniMessage().deserialize(
-                                    SignMessageConfig.SIGN_REMOVE_GROUP_SUCCESS,
-                                    Placeholder.unparsed("amount", signAmount.toString()),
-                                    Placeholder.unparsed("group", group)
-                                )
-                            )
-                        } ?: run {
-                            player.sendMessage(
-                                MiniMessage.miniMessage().deserialize(
-                                    SignMessageConfig.SIGN_REMOVE_GROUP_NOT_REGISTERED,
-                                    Placeholder.unparsed("group", group)
-                                )
-                            )
-                            return@handler
                         }
 
                         return@handler
