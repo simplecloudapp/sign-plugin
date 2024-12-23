@@ -4,10 +4,8 @@ import app.simplecloud.plugin.sign.paper.PaperSignsPlugin
 import app.simplecloud.plugin.sign.paper.PaperSignsPluginBootstrap
 import app.simplecloud.plugin.sign.shared.config.SignMessageConfig
 import build.buf.gen.simplecloud.controller.v1.ServerType
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import io.grpc.StatusException
+import kotlinx.coroutines.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
@@ -22,6 +20,7 @@ import org.incendo.cloud.paper.util.sender.Source
 import org.incendo.cloud.parser.standard.StringParser
 import org.incendo.cloud.suggestion.BlockingSuggestionProvider
 import org.incendo.cloud.suggestion.Suggestion
+import java.lang.Runnable
 
 class SignCommand(private var bootstrap: PaperSignsPluginBootstrap) {
 
@@ -49,29 +48,6 @@ class SignCommand(private var bootstrap: PaperSignsPluginBootstrap) {
                     val player = it.sender().source()
                     val group = it.getOrDefault("group", "")
 
-                    if (group.isBlank()) {
-                        player.sendMessage(
-                            MiniMessage.miniMessage().deserialize(SignMessageConfig.GROUP_REQUIRED_ARGUMENT)
-                        )
-                        printHelp(it.sender())
-                        return@handler
-                    }
-
-                    CoroutineScope(Dispatchers.IO).launch {
-                        val coroutineGroup = PaperSignsPluginBootstrap.controllerApi.getGroups().getGroupByName(group)
-                        println(coroutineGroup)
-
-                        player.sendMessage(
-                            MiniMessage.miniMessage()
-                                .deserialize(
-                                    SignMessageConfig.GROUP_NOT_FOUND,
-                                    Placeholder.component("group", Component.text(group))
-                                )
-                        )
-
-                        return@launch
-                    }
-
                     val location = getLocation(player)
                     if (location.block.state !is Sign) {
                         player.sendMessage(MiniMessage.miniMessage().deserialize(SignMessageConfig.SIGN_NOT_FOUND))
@@ -84,14 +60,32 @@ class SignCommand(private var bootstrap: PaperSignsPluginBootstrap) {
                         )
                         return@handler
                     } ?: run {
-                        bootstrap.signManager.register(group, location)
+                        CoroutineScope(Dispatchers.IO).launch {
+                            kotlin.runCatching {
+                                bootstrap.controllerApi.getGroups().getGroupByName(group)
+                                withContext(Dispatchers.Main) {
+                                    bootstrap.signManager.register(group, location)
 
-                        player.sendMessage(
-                            MiniMessage.miniMessage().deserialize(
-                                SignMessageConfig.SIGN_CREATE_SUCCESS,
-                                Placeholder.unparsed("group", group)
-                            )
-                        )
+                                    player.sendMessage(
+                                        MiniMessage.miniMessage().deserialize(
+                                            SignMessageConfig.SIGN_CREATE_SUCCESS,
+                                            Placeholder.unparsed("group", group)
+                                        )
+                                    )
+                                }
+                            }.onFailure { exception ->
+                                if (exception is StatusException) {
+                                    player.sendMessage(
+                                        MiniMessage.miniMessage()
+                                            .deserialize(
+                                                SignMessageConfig.GROUP_NOT_FOUND,
+                                                Placeholder.component("group", Component.text(group))
+                                            )
+                                    )
+                                    return@launch
+                                }
+                            }
+                        }
                     }
                 }
         )

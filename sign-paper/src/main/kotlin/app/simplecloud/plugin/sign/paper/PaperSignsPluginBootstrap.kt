@@ -84,9 +84,4 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
             Placeholder.parsed("state", cloudSign.server?.state?.toString() ?: "unknown"),
         )
     }
-
-    companion object {
-        lateinit var controllerApi: ControllerApi.Coroutine
-            private set
-    }
 }
