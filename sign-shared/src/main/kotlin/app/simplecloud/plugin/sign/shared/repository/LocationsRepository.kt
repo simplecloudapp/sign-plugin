@@ -2,8 +2,10 @@ package app.simplecloud.plugin.sign.shared.repository
 
 import app.simplecloud.plugin.sign.shared.LocationMapper
 import app.simplecloud.plugin.sign.shared.config.LocationsConfig
+import java.nio.file.Files
 import java.nio.file.Path
 
+@Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
 class LocationsRepository<T>(
     private val directoryPath: Path,
     private val locationMapper: LocationMapper<T>,
@@ -21,35 +23,30 @@ class LocationsRepository<T>(
         return entities.values.find { it.serverGroup == groupName }
     }
 
+    private fun findByLocation(location: T): LocationsConfig? {
+        return entities.values.find { it -> it.locations.any { it == locationMapper.unmap(location) } }
+    }
+
     fun saveLocation(groupName: String, location: T) {
         val config = find(groupName) ?: LocationsConfig(serverGroup = groupName)
         val unmappedLocation = locationMapper.unmap(location)
-
-        println(unmappedLocation)
-        unmappedLocation.forEach { t, u ->
-            println("$t: $u ${u::class}")
-        }
 
         save(
             config.copy(
                 locations = listOf(*config.locations.toTypedArray(), unmappedLocation)
             )
         )
-        println("Saved location $unmappedLocation")
     }
 
     fun removeLocation(location: T) {
         val config = findByLocation(location) ?: return
         val unmappedLocation = locationMapper.unmap(location)
-        save(
-            config.copy(
-                locations = config.locations.filter { it != unmappedLocation }
-            )
-        )
-    }
+        val updatedList = config.locations.filterNot { it == unmappedLocation }
 
-    fun findByLocation(location: T): LocationsConfig? {
-        return entities.values.find { it.locations.any { it == locationMapper.unmap(location) } }
-    }
+        save(config.copy(locations = updatedList))
 
+        if (updatedList.isEmpty()) {
+            Files.delete(directoryPath.resolve(getFileName(config.serverGroup)))
+        }
+    }
 }

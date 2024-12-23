@@ -19,5 +19,4 @@ data class LayoutConfig(
             .replace("%group%", server.group)
             .replace("%numerical-id%", server.numericalId.toString())
     }
-
 }

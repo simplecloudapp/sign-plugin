@@ -19,5 +19,4 @@ data class FrameConfig(
     override fun hashCode(): Int {
         return lines.contentHashCode()
     }
-
 }

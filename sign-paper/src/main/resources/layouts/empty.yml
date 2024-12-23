@@ -1,0 +1,11 @@
+name: "empty"
+rule: "EMPTY"
+display-name: "%group%-%numerical-id%"
+priority: 40
+frame-update-interval: 100
+frames:
+  - lines:
+      - "<group> <numerical-id>"
+      - "<b><#ff4aff>SERVER EMPTY</b>"
+      - ""
+      - "<player-count>/<max-players>"

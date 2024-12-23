@@ -1,6 +1,6 @@
 name: SimpleCloud-Signs
 version: 1.0
-author: Fllip
+authors: [ Fllip, PrexorDev ]
 description: A simple plugin that adds signs to SimpleCloud
 main: app.simplecloud.plugin.sign.paper.PaperSignsPlugin
 api-version: "1.21.4"

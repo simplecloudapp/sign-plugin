@@ -10,9 +10,9 @@ import app.simplecloud.plugin.sign.shared.rule.SignRule
 import kotlinx.coroutines.*
 import java.nio.file.Path
 
-class SignPlugin<T>(
-    private val controllerApi: ControllerApi.Coroutine,
-    private val directoryPath: Path,
+class SignManager<T>(
+    controllerApi: ControllerApi.Coroutine,
+    directoryPath: Path,
     private val locationMapper: LocationMapper<T>,
     private val signUpdater: SignUpdater<T>
 ) {
@@ -21,20 +21,28 @@ class SignPlugin<T>(
     private val currentFrameIndexes = mutableMapOf<String, Int>()
     private val lastFrameUpdates = mutableMapOf<String, Long>()
 
-    val locationsRepository = LocationsRepository(directoryPath.resolve("locations"), locationMapper)
+    private val locationsRepository = LocationsRepository(directoryPath.resolve("locations"), locationMapper)
     private val layoutRepository = LayoutRepository(directoryPath.resolve("layouts"))
 
     private val serverCache = ServerCache(controllerApi, locationsRepository)
 
     fun start() {
         locationsRepository.load()
-        val layouts = layoutRepository.load()
+        var layouts = layoutRepository.load()
+
+        if (layouts.isEmpty()) {
+            layoutRepository.loadLayoutDefaults(SignManager::class.java.classLoader)
+            layouts = layoutRepository.load()
+        }
 
         println("Loaded ${layouts.size} Sign Layouts")
 
-
         serverCache.startCacheJob()
         startUpdateSignJob()
+    }
+
+    fun register(groupName: String, location: T) {
+        locationsRepository.saveLocation(groupName, location)
     }
 
     fun getLayout(server: Server?): LayoutConfig {
@@ -45,6 +53,19 @@ class SignPlugin<T>(
 
     fun getCloudSign(location: T): CloudSign<T>? {
         return cloudSigns[location]
+    }
+
+    fun getCloudSignsByGroup(group: String): List<CloudSign<T>>? {
+        return cloudSigns.values.filter { it.server?.group == group }.takeIf { it.isNotEmpty() }
+    }
+
+    fun getAllGroupsRegistered(): List<String> {
+        return locationsRepository.getAll().map { it.serverGroup }.toList()
+    }
+
+    fun removeCloudSign(location: T) {
+        cloudSigns.remove(location)
+        locationsRepository.removeLocation(location)
     }
 
     private fun startUpdateSignJob() {
@@ -91,7 +112,7 @@ class SignPlugin<T>(
         }
     }
 
-    private fun updateSign(cloudSign: CloudSign<T>) {
+    fun updateSign(cloudSign: CloudSign<T>) {
         cloudSigns[cloudSign.location] = cloudSign
 
         val layout = getLayout(cloudSign.server)
@@ -100,24 +121,22 @@ class SignPlugin<T>(
             return
         }
 
-        val currentFrame = layout.frames[currentFrameIndex] ?: return
+        val currentFrame = layout.frames[currentFrameIndex]
         signUpdater.update(cloudSign, currentFrame)
     }
 
     private fun updateLayoutIndexes() {
-        layoutRepository.getAll()
-            .forEach {
-                val lastFrameUpdate = lastFrameUpdates.getOrDefault(it.name, 0)
-                if (System.currentTimeMillis() - lastFrameUpdate < it.frameUpdateInterval) {
-                    return@forEach
-                }
+        val currentTime = System.currentTimeMillis()
 
-                currentFrameIndexes.compute(it.name) { _, index ->
-                    if (index == null) 0
-                    else (index + 1) % it.frames.size
-                }
-                lastFrameUpdates[it.name] = System.currentTimeMillis()
-            }
+        layoutRepository.getAll().forEach { layout ->
+            val lastFrameUpdate = lastFrameUpdates.getOrDefault(layout.name, 0)
+
+            if (currentTime - lastFrameUpdate < layout.frameUpdateInterval) return@forEach
+
+            val currentIndex = currentFrameIndexes[layout.name] ?: 0
+
+            currentFrameIndexes[layout.name] = (currentIndex + 1) % layout.frames.size
+            lastFrameUpdates[layout.name] = currentTime
+        }
     }
-
 }

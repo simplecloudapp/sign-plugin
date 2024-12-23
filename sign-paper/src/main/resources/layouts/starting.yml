@@ -1,0 +1,21 @@
+name: "starting"
+rule: "STARTING"
+display-name: "%group%-%numerical-id%"
+priority: 0
+frame-update-interval: 500
+frames:
+  - lines:
+      - "<group>"
+      - ""
+      - "Starting"
+      - "Ooo"
+  - lines:
+      - "<group>"
+      - ""
+      - "Starting"
+      - "oOo"
+  - lines:
+      - "<group>"
+      - ""
+      - "Starting"
+      - "ooO"

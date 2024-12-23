@@ -7,7 +7,11 @@ import org.spongepowered.configurate.loader.ParsingException
 import org.spongepowered.configurate.yaml.NodeStyle
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader
 import java.io.File
-import java.nio.file.*
+import java.nio.file.FileSystems
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardWatchEventKinds
+import java.util.jar.JarFile
 
 
 abstract class YamlDirectoryRepository<I, E>(
@@ -96,7 +100,7 @@ abstract class YamlDirectoryRepository<I, E>(
             StandardWatchEventKinds.ENTRY_MODIFY
         )
 
-        return CoroutineScope(Dispatchers.Default).launch {
+        return CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
                 val key = watchService.take()
                 for (event in key.pollEvents()) {
@@ -109,7 +113,7 @@ abstract class YamlDirectoryRepository<I, E>(
                     when (kind) {
                         StandardWatchEventKinds.ENTRY_CREATE,
                         StandardWatchEventKinds.ENTRY_MODIFY
-                        -> {
+                            -> {
                             load(resolvedPath.toFile())
                         }
 
@@ -123,4 +127,50 @@ abstract class YamlDirectoryRepository<I, E>(
         }
     }
 
+    fun loadLayoutDefaults(classLoader: ClassLoader) {
+        val targetDirectory = File(directory.toUri()).apply { mkdirs() }
+
+        val resourceUrl = classLoader.getResource("layouts") ?: run {
+            println("Layouts folder not found in resources")
+            return
+        }
+
+        when (resourceUrl.protocol) {
+            "file" -> {
+                val resourceDir = File(resourceUrl.toURI())
+                resourceDir.copyRecursively(targetDirectory, overwrite = true)
+            }
+
+            "jar" -> {
+                val jarPath = resourceUrl.path.substringBefore("!")
+                    .removePrefix("file:")
+
+                try {
+                    JarFile(jarPath).use { jarFile ->
+                        jarFile.entries().asSequence()
+                            .filter { it.name.startsWith("layouts/") && !it.isDirectory }
+                            .forEach { entry ->
+                                val targetFile = File(targetDirectory, entry.name.removePrefix("layouts/"))
+                                targetFile.parentFile.mkdirs()
+
+                                try {
+                                    jarFile.getInputStream(entry).use { resourceStream ->
+                                        targetFile.outputStream().use { fileOutputStream ->
+                                            resourceStream.copyTo(fileOutputStream)
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    println("Error copying file ${entry.name}: ${e.message}")
+                                }
+                            }
+                    }
+                } catch (e: Exception) {
+                    println("Error processing JAR file: ${e.message}")
+                    e.printStackTrace()
+                }
+            }
+
+            else -> println("Unsupported protocol: ${resourceUrl.protocol}")
+        }
+    }
 }

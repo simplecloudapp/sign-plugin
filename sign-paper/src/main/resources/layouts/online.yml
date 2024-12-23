@@ -1,0 +1,11 @@
+name: "online"
+rule: "ONLINE"
+display-name: "%group%-%numerical-id%"
+priority: 50
+frame-update-interval: 100
+frames:
+  - lines:
+      - "<group> <numerical-id>"
+      - "<b><#a3e635><group></b>"
+      - ""
+      - "<player-count>/<max-players>"

@@ -1,26 +1,25 @@
 [versions]
 kotlin = "2.0.0"
 shadow = "8.3.3"
-grpc-version = "1.61.0"
-grpc-kotlin-version = "1.4.1"
 simplecloud-controller = "0.0.30-dev.e3e27fc"
-paper = "1.21.1-R0.1-SNAPSHOT"
+paper = "1.21.4-R0.1-SNAPSHOT"
 cloud-commands = "2.0.0-beta.10"
+cloud-annotations = "2.0.0"
+cloud-confirmation-processors = "1.0.0-rc.1"
 
 [libraries]
 kotlin-jvm = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc-version" }
-grpc-kotlin-stub = { module = "io.grpc:grpc-kotlin-stub", version.ref = "grpc-kotlin-version" }
-grpc-netty-shaded = { module = "io.grpc:grpc-netty-shaded", version.ref = "grpc-version" }
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
 cloud-minecraft-extras = { module = "org.incendo:cloud-minecraft-extras", version.ref = "cloud-commands" }
 cloud-paper = { module = "org.incendo:cloud-paper", version.ref = "cloud-commands" }
+cloud-processors-confirmation = { module = "org.incendo:cloud-processors-confirmation", version.ref = "cloud-confirmation-processors" }
+cloud-annotations = { module = "org.incendo:cloud-annotations", version.ref = "cloud-annotations" }
 
 simplecloud-controller-api = { module = "app.simplecloud.controller:controller-api", version.ref = "simplecloud-controller" }
 
 [bundles]
-cloud-paper = ["cloud-paper", "cloud-minecraft-extras"]
+cloud-paper = ["cloud-paper", "cloud-minecraft-extras", "cloud-processors-confirmation"]
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

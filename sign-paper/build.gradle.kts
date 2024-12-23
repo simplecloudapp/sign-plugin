@@ -1,6 +1,7 @@
 dependencies {
     api(project(":sign-shared"))
     compileOnly(rootProject.libs.paper.api)
+    implementation(rootProject.libs.cloud.annotations)
     implementation(rootProject.libs.bundles.cloud.paper)
 }
 

@@ -11,7 +11,8 @@ class ServerCache<T>(
     private val locationsRepository: LocationsRepository<T>
 ) {
 
-    private val serverCache = Multimaps.synchronizedMultimap(Multimaps.newListMultimap<String, Server>(mutableMapOf(), ::arrayListOf))
+    private val serverCache =
+        Multimaps.synchronizedMultimap(Multimaps.newListMultimap<String, Server>(mutableMapOf(), ::arrayListOf))
 
     fun startCacheJob(): Job {
         return CoroutineScope(Dispatchers.IO).launch {
@@ -22,9 +23,9 @@ class ServerCache<T>(
         }
     }
 
-        fun getServersByGroup(group: String): List<Server> {
-            return serverCache[group].orEmpty().toList()
-        }
+    fun getServersByGroup(group: String): List<Server> {
+        return serverCache[group].orEmpty().toList()
+    }
 
     private suspend fun updateCache() {
         locationsRepository.getAll()
@@ -34,6 +35,5 @@ class ServerCache<T>(
                 val servers = controllerApi.getServers().getServersByGroup(group)
                 serverCache.replaceValues(group, servers)
             }
-        }
-
     }
+}
