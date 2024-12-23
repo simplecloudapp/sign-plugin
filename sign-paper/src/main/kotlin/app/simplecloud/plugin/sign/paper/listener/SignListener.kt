@@ -1,9 +1,6 @@
 package app.simplecloud.plugin.sign.paper.listener
 
 import app.simplecloud.plugin.sign.paper.PaperSignsPlugin
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import org.bukkit.block.Sign
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -23,16 +20,6 @@ data class SignListener(private val plugin: PaperSignsPlugin) : Listener {
             event.isCancelled = true
 
             cloudSign.server?.let { server ->
-                CoroutineScope(Dispatchers.Main).launch {
-                    println("----------------- GROUP -----------------")
-                    println(plugin.signManager.controllerApi.getGroups().getGroupByName(server.group).properties)
-                    println("----------------- GROUP -----------------")
-                }
-
-                println("----------------- SERVER -----------------")
-                println(server.properties)
-                println("----------------- SERVER -----------------")
-
                 val serverName = plugin.signManager.getLayout(server).constructName(server)
                 plugin.sendPlayerToServer(event.player, serverName)
 
