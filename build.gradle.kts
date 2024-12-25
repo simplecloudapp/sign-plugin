@@ -1,4 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -40,28 +41,32 @@ subprojects {
         jvmToolchain(21)
     }
 
-    tasks.withType<KotlinCompile> {
-        kotlinOptions.jvmTarget = "21"
-    }
+    tasks {
+        withType<KotlinCompile> {
+            compilerOptions {
+                jvmTarget.set(JvmTarget.JVM_21)
+            }
+        }
 
-    tasks.named("shadowJar", ShadowJar::class) {
-        mergeServiceFiles()
-        archiveFileName.set("${project.name}.jar")
-    }
+        named("shadowJar", ShadowJar::class) {
+            mergeServiceFiles()
+            archiveFileName.set("${project.name}.jar")
+        }
 
-    tasks.test {
-        useJUnitPlatform()
-    }
-
-    tasks.processResources {
-        expand("version" to project.version,
-            "name" to project.name)
+        processResources {
+            expand(
+                "version" to project.version,
+                "name" to project.name
+            )
+        }
     }
 }
 
 tasks.processResources {
-    expand("version" to project.version,
-        "name" to project.name)
+    expand(
+        "version" to project.version,
+        "name" to project.name
+    )
 }
 
 tasks.test {
