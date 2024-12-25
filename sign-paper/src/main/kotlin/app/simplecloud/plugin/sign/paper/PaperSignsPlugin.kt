@@ -30,6 +30,10 @@ class PaperSignsPlugin(
         commandManager.onEnable()
     }
 
+    override fun onDisable() {
+        signManager.stop()
+    }
+
     fun sendPlayerToServer(player: Player, serverName: String) {
         val dataOutput = ByteStreams.newDataOutput()
         dataOutput.writeUTF("Connect")

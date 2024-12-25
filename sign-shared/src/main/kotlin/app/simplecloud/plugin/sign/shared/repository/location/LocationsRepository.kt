@@ -1,7 +1,8 @@
-package app.simplecloud.plugin.sign.shared.repository
+package app.simplecloud.plugin.sign.shared.repository.location
 
 import app.simplecloud.plugin.sign.shared.LocationMapper
-import app.simplecloud.plugin.sign.shared.config.LocationsConfig
+import app.simplecloud.plugin.sign.shared.config.location.LocationsConfig
+import app.simplecloud.plugin.sign.shared.repository.base.YamlDirectoryRepository
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -12,7 +13,7 @@ class LocationsRepository<T>(
 ) : YamlDirectoryRepository<String, LocationsConfig>(directoryPath, LocationsConfig::class.java) {
 
     override fun save(element: LocationsConfig) {
-        save(getFileName(element.serverGroup), element)
+        save(getFileName(element.group), element)
     }
 
     override fun getFileName(groupName: String): String {
@@ -20,33 +21,33 @@ class LocationsRepository<T>(
     }
 
     override fun find(groupName: String): LocationsConfig? {
-        return entities.values.find { it.serverGroup == groupName }
+        return entities.values.find { it.group == groupName }
     }
 
     private fun findByLocation(location: T): LocationsConfig? {
         return entities.values.find { it -> it.locations.any { it == locationMapper.unmap(location) } }
     }
 
-    fun saveLocation(groupName: String, location: T) {
-        val config = find(groupName) ?: LocationsConfig(serverGroup = groupName)
-        val unmappedLocation = locationMapper.unmap(location)
+    fun saveLocation(group: String, location: T) {
+        val config = find(group) ?: LocationsConfig(group)
+        val signLocation = locationMapper.unmap(location)
 
         save(
             config.copy(
-                locations = listOf(*config.locations.toTypedArray(), unmappedLocation)
+                locations = config.locations + signLocation
             )
         )
     }
 
     fun removeLocation(location: T) {
         val config = findByLocation(location) ?: return
-        val unmappedLocation = locationMapper.unmap(location)
-        val updatedList = config.locations.filterNot { it == unmappedLocation }
+        val signLocation = locationMapper.unmap(location)
+        val updatedLocations = config.locations - signLocation
 
-        save(config.copy(locations = updatedList))
-
-        if (updatedList.isEmpty()) {
-            Files.delete(directoryPath.resolve(getFileName(config.serverGroup)))
+        if (updatedLocations.isEmpty()) {
+            Files.delete(directoryPath.resolve(getFileName(config.group)))
+        } else {
+            save(config.copy(locations = updatedLocations))
         }
     }
 }

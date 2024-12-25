@@ -1,4 +1,4 @@
-package app.simplecloud.plugin.sign.shared.repository
+package app.simplecloud.plugin.sign.shared.repository.base
 
 interface Repository<I, E> {
     fun delete(element: E): Boolean

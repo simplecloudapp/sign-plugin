@@ -1,6 +1,7 @@
-package app.simplecloud.plugin.sign.shared.repository
+package app.simplecloud.plugin.sign.shared.repository.layout
 
-import app.simplecloud.plugin.sign.shared.config.LayoutConfig
+import app.simplecloud.plugin.sign.shared.config.layout.LayoutConfig
+import app.simplecloud.plugin.sign.shared.repository.base.YamlDirectoryRepository
 import java.nio.file.Path
 
 @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")

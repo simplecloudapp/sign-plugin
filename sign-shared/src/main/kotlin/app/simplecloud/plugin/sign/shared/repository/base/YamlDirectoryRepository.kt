@@ -1,4 +1,4 @@
-package app.simplecloud.plugin.sign.shared.repository
+package app.simplecloud.plugin.sign.shared.repository.base
 
 import kotlinx.coroutines.*
 import org.spongepowered.configurate.ConfigurationOptions
@@ -7,6 +7,7 @@ import org.spongepowered.configurate.loader.ParsingException
 import org.spongepowered.configurate.yaml.NodeStyle
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader
 import java.io.File
+import java.net.URL
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
@@ -37,6 +38,7 @@ abstract class YamlDirectoryRepository<I, E>(
     override fun load(): List<E> {
         if (!directory.toFile().exists()) {
             directory.toFile().mkdirs()
+            loadLayoutDefaults()
         }
 
         registerWatcher()
@@ -103,74 +105,78 @@ abstract class YamlDirectoryRepository<I, E>(
         return CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
                 val key = watchService.take()
-                for (event in key.pollEvents()) {
-                    val path = event.context() as? Path ?: continue
+
+                key.pollEvents().forEach { event ->
+                    val path = event.context() as? Path ?: return@forEach
+                    if (!path.toString().endsWith(".yml")) return@forEach
+
                     val resolvedPath = directory.resolve(path)
-                    if (Files.isDirectory(resolvedPath) || !resolvedPath.toString().endsWith(".yml")) {
-                        continue
-                    }
-                    val kind = event.kind()
-                    when (kind) {
+                    if (Files.isDirectory(resolvedPath)) return@forEach
+
+                    when (event.kind()) {
                         StandardWatchEventKinds.ENTRY_CREATE,
-                        StandardWatchEventKinds.ENTRY_MODIFY
-                            -> {
+                        StandardWatchEventKinds.ENTRY_MODIFY -> {
+                            delay(100)
                             load(resolvedPath.toFile())
                         }
 
-                        StandardWatchEventKinds.ENTRY_DELETE -> {
-                            deleteFile(resolvedPath.toFile())
-                        }
+                        StandardWatchEventKinds.ENTRY_DELETE -> deleteFile(resolvedPath.toFile())
                     }
                 }
+
                 key.reset()
             }
         }
     }
 
-    fun loadLayoutDefaults(classLoader: ClassLoader) {
+    private fun loadLayoutDefaults() {
         val targetDirectory = File(directory.toUri()).apply { mkdirs() }
 
-        val resourceUrl = classLoader.getResource("layouts") ?: run {
+        // Get the resource URL for the "layouts" folder
+        val resourceUrl = YamlDirectoryRepository::class.java.getResource("/layouts") ?: run {
             println("Layouts folder not found in resources")
             return
         }
 
         when (resourceUrl.protocol) {
-            "file" -> {
-                val resourceDir = File(resourceUrl.toURI())
-                resourceDir.copyRecursively(targetDirectory, overwrite = true)
-            }
+            "file" -> handleFileProtocol(resourceUrl, targetDirectory)
+            "jar" -> handleJarProtocol(resourceUrl, targetDirectory)
+            else -> println("Unsupported protocol: ${resourceUrl.protocol}")
+        }
+    }
 
-            "jar" -> {
-                val jarPath = resourceUrl.path.substringBefore("!")
-                    .removePrefix("file:")
+    private fun handleFileProtocol(resourceUrl: URL, targetDirectory: File) {
+        val resourceDir = File(resourceUrl.toURI())
+        if (resourceDir.exists()) {
+            resourceDir.copyRecursively(targetDirectory, overwrite = true)
+        } else {
+            println("Resource directory does not exist: ${resourceUrl.path}")
+        }
+    }
 
-                try {
-                    JarFile(jarPath).use { jarFile ->
-                        jarFile.entries().asSequence()
-                            .filter { it.name.startsWith("layouts/") && !it.isDirectory }
-                            .forEach { entry ->
-                                val targetFile = File(targetDirectory, entry.name.removePrefix("layouts/"))
-                                targetFile.parentFile.mkdirs()
-
-                                try {
-                                    jarFile.getInputStream(entry).use { resourceStream ->
-                                        targetFile.outputStream().use { fileOutputStream ->
-                                            resourceStream.copyTo(fileOutputStream)
-                                        }
-                                    }
-                                } catch (e: Exception) {
-                                    println("Error copying file ${entry.name}: ${e.message}")
+    private fun handleJarProtocol(resourceUrl: URL, targetDirectory: File) {
+        val jarPath = resourceUrl.path.substringBefore("!").removePrefix("file:")
+        try {
+            JarFile(jarPath).use { jarFile ->
+                jarFile.entries().asSequence()
+                    .filter { it.name.startsWith("layouts/") && !it.isDirectory }
+                    .forEach { entry ->
+                        val targetFile = File(targetDirectory, entry.name.removePrefix("layouts/"))
+                        targetFile.parentFile.mkdirs()
+                        try {
+                            jarFile.getInputStream(entry).use { resourceStream ->
+                                targetFile.outputStream().use { fileOutputStream ->
+                                    resourceStream.copyTo(fileOutputStream)
                                 }
                             }
+                        } catch (e: Exception) {
+                            println("Error copying file ${entry.name}: ${e.message}")
+                        }
                     }
-                } catch (e: Exception) {
-                    println("Error processing JAR file: ${e.message}")
-                    e.printStackTrace()
-                }
             }
-
-            else -> println("Unsupported protocol: ${resourceUrl.protocol}")
+        } catch (e: Exception) {
+            println("Error processing JAR file: ${e.message}")
+            e.printStackTrace()
         }
     }
 }

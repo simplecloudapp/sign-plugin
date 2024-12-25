@@ -20,7 +20,7 @@ data class SignListener(private val plugin: PaperSignsPlugin) : Listener {
             event.isCancelled = true
 
             cloudSign.server?.let { server ->
-                val serverName = plugin.signManager.getLayout(server).constructName(server)
+                val serverName = plugin.signManager.layoutManager.getLayout(server).constructName(server)
                 plugin.sendPlayerToServer(event.player, serverName)
 
                 plugin.signManager.getCloudSignsByGroup(server.group)?.forEach { plugin.signManager.updateSign(it) }
