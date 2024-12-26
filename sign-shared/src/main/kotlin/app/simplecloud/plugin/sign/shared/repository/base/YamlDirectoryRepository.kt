@@ -13,6 +13,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardWatchEventKinds
 import java.util.jar.JarFile
+import kotlin.io.path.pathString
 
 
 abstract class YamlDirectoryRepository<I, E>(
@@ -38,7 +39,7 @@ abstract class YamlDirectoryRepository<I, E>(
     override fun load(): List<E> {
         if (!directory.toFile().exists()) {
             directory.toFile().mkdirs()
-            loadLayoutDefaults()
+            loadDefaults()
         }
 
         registerWatcher()
@@ -120,7 +121,9 @@ abstract class YamlDirectoryRepository<I, E>(
                             load(resolvedPath.toFile())
                         }
 
-                        StandardWatchEventKinds.ENTRY_DELETE -> deleteFile(resolvedPath.toFile())
+                        StandardWatchEventKinds.ENTRY_DELETE -> {
+                            deleteFile(resolvedPath.toFile())
+                        }
                     }
                 }
 
@@ -129,12 +132,13 @@ abstract class YamlDirectoryRepository<I, E>(
         }
     }
 
-    private fun loadLayoutDefaults() {
+    private fun loadDefaults() {
         val targetDirectory = File(directory.toUri()).apply { mkdirs() }
 
-        // Get the resource URL for the "layouts" folder
-        val resourceUrl = YamlDirectoryRepository::class.java.getResource("/layouts") ?: run {
-            println("Layouts folder not found in resources")
+        val last = directory.pathString.split('/').last()
+
+        val resourceUrl = YamlDirectoryRepository::class.java.getResource("/$last") ?: run {
+            println("$last folder not found in resources")
             return
         }
 
@@ -158,10 +162,11 @@ abstract class YamlDirectoryRepository<I, E>(
         val jarPath = resourceUrl.path.substringBefore("!").removePrefix("file:")
         try {
             JarFile(jarPath).use { jarFile ->
+                val last = directory.pathString.split('/').last()
                 jarFile.entries().asSequence()
-                    .filter { it.name.startsWith("layouts/") && !it.isDirectory }
+                    .filter { it.name.startsWith("$last/") && !it.isDirectory }
                     .forEach { entry ->
-                        val targetFile = File(targetDirectory, entry.name.removePrefix("layouts/"))
+                        val targetFile = File(targetDirectory, entry.name.removePrefix("$last/"))
                         targetFile.parentFile.mkdirs()
                         try {
                             jarFile.getInputStream(entry).use { resourceStream ->

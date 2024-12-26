@@ -202,6 +202,7 @@ class SignCommand(private var bootstrap: PaperSignsPluginBootstrap) {
 
         Bukkit.getScheduler().runTask(PaperSignsPlugin.instance, Runnable {
             sign.getSide(Side.FRONT).lines().replaceAll { Component.text("") }
+            sign.getSide(Side.BACK).lines().replaceAll { Component.text("") }
 
             sign.update()
         })

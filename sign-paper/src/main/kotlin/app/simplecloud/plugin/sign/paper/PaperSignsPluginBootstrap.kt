@@ -44,9 +44,16 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
                 val sign = location.block.state as? Sign ?: return@Runnable
 
                 sign.getSide(Side.FRONT).lines().replaceAll { Component.empty() }
+                sign.getSide(Side.BACK).lines().replaceAll { Component.empty() }
 
                 frameConfig.lines.forEachIndexed { index, line ->
                     sign.getSide(Side.FRONT).line(
+                        index, miniMessage.deserialize(
+                            line,
+                            *getPlaceholders(cloudSign).toTypedArray()
+                        )
+                    )
+                    sign.getSide(Side.BACK).line(
                         index, miniMessage.deserialize(
                             line,
                             *getPlaceholders(cloudSign).toTypedArray()

@@ -3,9 +3,12 @@ package app.simplecloud.plugin.sign.shared
 import app.simplecloud.controller.api.ControllerApi
 import app.simplecloud.controller.shared.server.Server
 import app.simplecloud.plugin.sign.shared.cache.ServerCache
-import app.simplecloud.plugin.sign.shared.config.layout.LayoutManager
+import app.simplecloud.plugin.sign.shared.config.layout.LayoutConfig
 import app.simplecloud.plugin.sign.shared.config.location.LocationsConfig
 import app.simplecloud.plugin.sign.shared.config.location.SignLocation
+import app.simplecloud.plugin.sign.shared.config.matcher.MatcherConfigEntry
+import app.simplecloud.plugin.sign.shared.config.matcher.MatcherType
+import app.simplecloud.plugin.sign.shared.repository.layout.LayoutRepository
 import app.simplecloud.plugin.sign.shared.repository.location.LocationsRepository
 import app.simplecloud.plugin.sign.shared.rule.SignRule
 import kotlinx.coroutines.*
@@ -23,7 +26,7 @@ class SignManager<T>(
     private val lastFrameUpdates = mutableMapOf<String, Long>()
 
     private val locationsRepository = LocationsRepository(directoryPath.resolve("locations"), locationMapper)
-    val layoutManager = LayoutManager(directoryPath.resolve("layouts"))
+    private val layoutRepository = LayoutRepository(directoryPath.resolve("layouts"))
 
     private val serverCache = ServerCache(controllerApi, locationsRepository)
 
@@ -31,9 +34,9 @@ class SignManager<T>(
 
     fun start() {
         locationsRepository.load()
-        layoutManager.load()
+        layoutRepository.load()
 
-        println("Loaded ${layoutManager.getAllLayouts().size} Sign Layouts")
+        println("Loaded ${layoutRepository.getAll().size} Sign Layouts")
 
         serverCache.startCacheJob()
         startUpdateSignJob()
@@ -46,6 +49,36 @@ class SignManager<T>(
 
     fun register(groupName: String, location: T) {
         locationsRepository.saveLocation(groupName, location)
+    }
+
+    fun getLayout(server: Server?): LayoutConfig {
+        val serverName = "${server?.group}-${server?.numericalId}"
+
+        return layoutRepository.getAll()
+            .sortedBy { it.priority }
+            .filter { it.rule.checker.check(server) }
+            .firstOrNull { layout -> checkMatches(layout.matcher, serverName) }
+            ?: LayoutConfig()
+    }
+
+    private fun checkMatches(matchers: Map<MatcherType, List<MatcherConfigEntry>>, serverName: String): Boolean {
+        if (matchers.containsKey(MatcherType.MATCH_ALL)) {
+            val matchAllResult = matchers[MatcherType.MATCH_ALL]?.all {
+                it.operation.matches(serverName, it.value)
+            } ?: false
+
+            if (!matchAllResult) {
+                return false
+            }
+        }
+
+        if (matchers.containsKey(MatcherType.MATCH_ANY)) {
+            return matchers[MatcherType.MATCH_ANY]?.any {
+                it.operation.matches(serverName, it.value)
+            } ?: false
+        }
+
+        return true
     }
 
     fun getCloudSign(location: T): CloudSign<T>? {
@@ -124,7 +157,7 @@ class SignManager<T>(
     fun updateSign(cloudSign: CloudSign<T>) {
         cloudSigns[cloudSign.location] = cloudSign
 
-        val layout = layoutManager.getLayout(cloudSign.server)
+        val layout = getLayout(cloudSign.server)
         if (layout.frames.isEmpty()) return
 
         val currentFrameIndex = currentFrameIndexes.getOrDefault(layout.name, 0)
@@ -136,7 +169,7 @@ class SignManager<T>(
     private fun updateLayoutIndexes() {
         val currentTime = System.currentTimeMillis()
 
-        layoutManager.getAllLayouts().forEach { layout ->
+        layoutRepository.getAll().forEach { layout ->
             val lastFrameUpdate = lastFrameUpdates.getOrDefault(layout.name, 0)
             if (currentTime - lastFrameUpdate < layout.frameUpdateInterval) return@forEach
 
