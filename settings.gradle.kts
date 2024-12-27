@@ -14,6 +14,6 @@ plugins {
 rootProject.name = "sign-plugin"
 
 include(
-    "sign-shared",
-    "sign-paper",
+    ":sign-shared",
+    ":sign-paper",
 )

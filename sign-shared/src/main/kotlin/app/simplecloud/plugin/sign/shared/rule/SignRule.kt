@@ -8,18 +8,15 @@ enum class SignRule(
 ) {
 
     STARTING(ServerState.STARTING),
-    OFFLINE(null, { it == null}),
-    MAINTENANCE(ServerState.AVAILABLE, { it?.properties?.getOrDefault("maintenance", false) == true}),
-    FULL(ServerState.AVAILABLE, { it?.playerCount == it?.maxPlayers}),
-    EMPTY(ServerState.AVAILABLE, { (it?.playerCount?: 0L) == 0L}),
+    OFFLINE(null, { it == null }),
+    MAINTENANCE(ServerState.AVAILABLE, { it?.properties?.getOrDefault("maintenance", false) == true }),
+    FULL(ServerState.AVAILABLE, { it?.playerCount == it?.maxPlayers }),
+    EMPTY(ServerState.AVAILABLE, { (it?.playerCount ?: 0L) == 0L }),
     ONLINE(ServerState.AVAILABLE);
 
     companion object {
-
         fun hasRule(serverState: ServerState?): Boolean {
             return entries.any { it.serverState == serverState }
         }
-
     }
-
 }

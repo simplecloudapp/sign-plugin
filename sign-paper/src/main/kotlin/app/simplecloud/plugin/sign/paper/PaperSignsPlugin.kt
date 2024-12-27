@@ -1,60 +1,53 @@
 package app.simplecloud.plugin.sign.paper
 
-import app.simplecloud.plugin.sign.shared.SignPlugin
+import app.simplecloud.plugin.sign.paper.listener.SignListener
 import com.google.common.io.ByteStreams
-import io.papermc.paper.command.brigadier.CommandSourceStack
+import kotlinx.coroutines.runBlocking
 import org.bukkit.Bukkit
-import org.bukkit.Location
-import org.bukkit.block.Sign
 import org.bukkit.entity.Player
-import org.bukkit.event.Event
-import org.bukkit.event.EventHandler
-import org.bukkit.event.Listener
-import org.bukkit.event.block.Action
-import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.plugin.java.JavaPlugin
-import org.incendo.cloud.paper.PaperCommandManager
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class PaperSignsPlugin(
-    private val signPlugin: SignPlugin<Location>,
-    private val commandManager: PaperCommandManager.Bootstrapped<CommandSourceStack>
-): JavaPlugin(), Listener {
+    val bootstrap: PaperSignsPluginBootstrap
+) : JavaPlugin() {
+
+    private val logger: Logger = LoggerFactory.getLogger(PaperSignsPlugin::class.java)
+
+    companion object {
+        lateinit var instance: PaperSignsPlugin
+            private set
+    }
+
+    override fun onLoad() {
+        instance = this
+    }
 
     override fun onEnable() {
         server.messenger.registerOutgoingPluginChannel(this, "BungeeCord")
-        Bukkit.getPluginManager().registerEvents(this, this)
 
-        commandManager.onEnable()
-        signPlugin.start()
+        Bukkit.getPluginManager().registerEvents(SignListener(this), this)
+
+        bootstrap.signManager.start()
+        bootstrap.commandManager.onEnable()
     }
 
-    @EventHandler
-    fun handleInteract(event: PlayerInteractEvent) {
-        if (event.useInteractedBlock() == Event.Result.DENY) {
-            return
+    override fun onDisable() {
+        runBlocking {
+            try {
+                bootstrap.signManager.stop()
+                bootstrap.disable()
+            } catch (e: Exception) {
+                logger.error("Error stopping SignManager", e)
+            }
         }
-
-        if (event.action != Action.RIGHT_CLICK_BLOCK) {
-            return
-        }
-
-        val block = event.clickedBlock?.state as? Sign?: return
-
-        val cloudSign = signPlugin.getCloudSign(block.location)?: return
-        if (cloudSign.server == null) {
-            return
-        }
-        event.isCancelled = true
-
-        val serverName = signPlugin.getLayout(cloudSign.server).constructName(cloudSign.server!!)
-        sendPlayerToServer(event.player, serverName)
     }
 
-    private fun sendPlayerToServer(player: Player, serverName: String) {
+    fun sendPlayerToServer(player: Player, serverName: String) {
         val dataOutput = ByteStreams.newDataOutput()
         dataOutput.writeUTF("Connect")
         dataOutput.writeUTF(serverName)
         player.sendPluginMessage(this, "BungeeCord", dataOutput.toByteArray())
     }
-
 }

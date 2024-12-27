@@ -1,4 +1,4 @@
-package app.simplecloud.plugin.sign.shared.repository
+package app.simplecloud.plugin.sign.shared.repository.base
 
 import kotlinx.coroutines.*
 import org.spongepowered.configurate.ConfigurationOptions
@@ -7,7 +7,14 @@ import org.spongepowered.configurate.loader.ParsingException
 import org.spongepowered.configurate.yaml.NodeStyle
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader
 import java.io.File
-import java.nio.file.*
+import java.io.FileOutputStream
+import java.net.URL
+import java.nio.file.FileSystems
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardWatchEventKinds
+import java.util.jar.JarFile
+import kotlin.io.path.pathString
 
 
 abstract class YamlDirectoryRepository<I, E>(
@@ -33,11 +40,12 @@ abstract class YamlDirectoryRepository<I, E>(
     override fun load(): List<E> {
         if (!directory.toFile().exists()) {
             directory.toFile().mkdirs()
+            loadDefaults()
         }
 
         registerWatcher()
 
-        return Files.list(directory)
+        return Files.walk(directory)
             .toList()
             .filter { !it.toFile().isDirectory && it.toString().endsWith(".yml") }
             .mapNotNull { load(it.toFile()) }
@@ -96,20 +104,21 @@ abstract class YamlDirectoryRepository<I, E>(
             StandardWatchEventKinds.ENTRY_MODIFY
         )
 
-        return CoroutineScope(Dispatchers.Default).launch {
+        return CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
                 val key = watchService.take()
-                for (event in key.pollEvents()) {
-                    val path = event.context() as? Path ?: continue
+
+                key.pollEvents().forEach { event ->
+                    val path = event.context() as? Path ?: return@forEach
+                    if (!path.toString().endsWith(".yml")) return@forEach
+
                     val resolvedPath = directory.resolve(path)
-                    if (Files.isDirectory(resolvedPath) || !resolvedPath.toString().endsWith(".yml")) {
-                        continue
-                    }
-                    val kind = event.kind()
-                    when (kind) {
+                    if (Files.isDirectory(resolvedPath)) return@forEach
+
+                    when (event.kind()) {
                         StandardWatchEventKinds.ENTRY_CREATE,
-                        StandardWatchEventKinds.ENTRY_MODIFY
-                        -> {
+                        StandardWatchEventKinds.ENTRY_MODIFY -> {
+                            delay(100)
                             load(resolvedPath.toFile())
                         }
 
@@ -118,9 +127,68 @@ abstract class YamlDirectoryRepository<I, E>(
                         }
                     }
                 }
+
                 key.reset()
             }
         }
     }
 
+    private fun loadDefaults() {
+        val targetDirectory = File(directory.toUri()).apply { mkdirs() }
+
+        val last = directory.pathString.split('/').last()
+
+        val resourceUrl = YamlDirectoryRepository::class.java.getResource("/$last") ?: run {
+            println("$last folder not found in resources")
+            return
+        }
+
+        when (resourceUrl.protocol) {
+            "file" -> handleFileProtocol(resourceUrl, targetDirectory)
+            "jar" -> handleJarProtocol(resourceUrl, targetDirectory)
+            else -> println("Unsupported protocol: ${resourceUrl.protocol}")
+        }
+    }
+
+    private fun handleFileProtocol(resourceUrl: URL, targetDirectory: File) {
+        val resourceDir = File(resourceUrl.toURI())
+        if (resourceDir.exists()) {
+            resourceDir.copyRecursively(targetDirectory, overwrite = true)
+        } else {
+            println("Resource directory does not exist: ${resourceUrl.path}")
+        }
+    }
+
+    private fun handleJarProtocol(resourceUrl: URL, targetDirectory: File) {
+        val jarPath = resourceUrl.path.substringBefore("!").removePrefix("file:")
+        try {
+            JarFile(jarPath).use { jarFile ->
+                val last = directory.pathString.split('/').last()
+                jarFile.entries().asSequence()
+                    .filter { it.name.startsWith("$last/") && !it.isDirectory }
+                    .forEach { entry ->
+                        val targetFile = File(targetDirectory, entry.name.removePrefix("$last/"))
+                        targetFile.parentFile.mkdirs()
+                        try {
+                            jarFile.getInputStream(entry).use { inputStream ->
+                                FileOutputStream(targetFile).use { fos ->
+                                    // Force UTF-8 BOM
+                                    fos.write(0xEF)
+                                    fos.write(0xBB)
+                                    fos.write(0xBF)
+
+                                    //copy content
+                                    inputStream.copyTo(fos)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            println("Error copying file ${entry.name}: ${e.message}")
+                        }
+                    }
+            }
+        } catch (e: Exception) {
+            println("Error processing JAR file: ${e.message}")
+            e.printStackTrace()
+        }
+    }
 }

@@ -1,4 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -6,19 +7,17 @@ plugins {
     alias(libs.plugins.shadow)
 }
 
+val baseVersion = "0.0.1"
+val commitHash = System.getenv("COMMIT_HASH")
+val snapshotversion = "${baseVersion}-dev.$commitHash"
+
 allprojects {
     group = "app.simplecloud.plugin"
-    version = "1.0-SNAPSHOT"
+    version = if (commitHash != null) snapshotversion else baseVersion
 
     repositories {
         mavenCentral()
         mavenLocal()
-        maven {
-            url = uri("https://oss.sonatype.org/content/repositories/snapshots")
-        }
-        maven {
-            url = uri("https://libraries.minecraft.net")
-        }
         maven {
             url = uri("https://repo.papermc.io/repository/maven-public/")
         }
@@ -40,28 +39,36 @@ subprojects {
         jvmToolchain(21)
     }
 
-    tasks.withType<KotlinCompile> {
-        kotlinOptions.jvmTarget = "21"
-    }
+    tasks {
+        withType<KotlinCompile> {
+            compilerOptions {
+                jvmTarget.set(JvmTarget.JVM_21)
+            }
+        }
 
-    tasks.named("shadowJar", ShadowJar::class) {
-        mergeServiceFiles()
-        archiveFileName.set("${project.name}.jar")
-    }
+        withType<JavaCompile> {
+            options.encoding = "UTF-8"
+        }
 
-    tasks.test {
-        useJUnitPlatform()
-    }
+        named("shadowJar", ShadowJar::class) {
+            mergeServiceFiles()
+            archiveFileName.set("${project.name}.jar")
+        }
 
-    tasks.processResources {
-        expand("version" to project.version,
-            "name" to project.name)
+        processResources {
+            expand(
+                "version" to project.version,
+                "name" to project.name
+            )
+        }
     }
 }
 
 tasks.processResources {
-    expand("version" to project.version,
-        "name" to project.name)
+    expand(
+        "version" to project.version,
+        "name" to project.name
+    )
 }
 
 tasks.test {

@@ -1,4 +1,4 @@
-package app.simplecloud.plugin.sign.shared.config
+package app.simplecloud.plugin.sign.shared.config.layout
 
 import org.spongepowered.configurate.objectmapping.ConfigSerializable
 
@@ -6,6 +6,10 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable
 data class FrameConfig(
     val lines: Array<String> = emptyArray(),
 ) {
+
+    init {
+        require(lines.size <= 4) { "Frame cannot have more than 4 lines (current: ${lines.size})" }
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -19,5 +23,4 @@ data class FrameConfig(
     override fun hashCode(): Int {
         return lines.contentHashCode()
     }
-
 }
