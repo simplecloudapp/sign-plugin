@@ -1,6 +1,7 @@
 package app.simplecloud.plugin.sign.paper.listener
 
 import app.simplecloud.plugin.sign.paper.PaperSignsPlugin
+import app.simplecloud.plugin.sign.paper.rule.PlayerRuleContext
 import org.bukkit.block.Sign
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -19,8 +20,14 @@ data class SignListener(private val plugin: PaperSignsPlugin) : Listener {
         plugin.bootstrap.signManager.getCloudSign(sign.location)?.let { cloudSign ->
             event.isCancelled = true
 
+            val playerRuleContext = PlayerRuleContext(
+                server = cloudSign.server,
+                serverState = cloudSign.server?.state,
+                event.player
+            )
+
             cloudSign.server?.let { server ->
-                val serverName = plugin.bootstrap.signManager.getLayout(server).constructName(server)
+                val serverName = plugin.bootstrap.signManager.getLayout(playerRuleContext).constructName(server)
                 plugin.sendPlayerToServer(event.player, serverName)
             }
         }

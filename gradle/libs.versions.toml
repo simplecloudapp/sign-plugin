@@ -5,6 +5,7 @@ simplecloud-controller = "0.0.30-dev.16f91aa"
 paper = "1.21.4-R0.1-SNAPSHOT"
 cloud-commands = "2.0.0-beta.10"
 cloud-confirmation-processors = "1.0.0-rc.1"
+coroutine = "1.10.1"
 
 [libraries]
 kotlin-jvm = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
@@ -17,8 +18,12 @@ cloud-processors-confirmation = { module = "org.incendo:cloud-processors-confirm
 
 simplecloud-controller-api = { module = "app.simplecloud.controller:controller-api", version.ref = "simplecloud-controller" }
 
+coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutine" }
+coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutine" }
+
 [bundles]
 cloud-paper = ["cloud-paper", "cloud-minecraft-extras", "cloud-processors-confirmation"]
+coroutine = ["coroutines-core", "coroutines-android"]
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

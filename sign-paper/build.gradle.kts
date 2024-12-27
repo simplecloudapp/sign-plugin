@@ -2,6 +2,7 @@ dependencies {
     api(project(":sign-shared"))
     compileOnly(rootProject.libs.paper.api)
     implementation(rootProject.libs.bundles.cloud.paper)
+    implementation(rootProject.libs.bundles.coroutine)
 }
 
 tasks {

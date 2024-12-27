@@ -1,6 +1,6 @@
 name: 'online_default'
 rule: 'ONLINE'
-priority: 10
+priority: 9
 frame-update-interval: 1250
 
 frames:

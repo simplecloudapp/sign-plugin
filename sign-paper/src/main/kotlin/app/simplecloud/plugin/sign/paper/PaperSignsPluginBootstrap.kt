@@ -2,9 +2,12 @@ package app.simplecloud.plugin.sign.paper
 
 import app.simplecloud.controller.api.ControllerApi
 import app.simplecloud.plugin.sign.paper.command.SignCommand
+import app.simplecloud.plugin.sign.paper.rule.PaperRuleRegistry
+import app.simplecloud.plugin.sign.paper.rule.PlayerRuleContext
 import app.simplecloud.plugin.sign.shared.CloudSign
 import app.simplecloud.plugin.sign.shared.SignManager
 import app.simplecloud.plugin.sign.shared.config.layout.FrameConfig
+import app.simplecloud.plugin.sign.shared.rule.impl.RuleContext
 import io.papermc.paper.plugin.bootstrap.BootstrapContext
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap
 import io.papermc.paper.plugin.bootstrap.PluginProviderContext
@@ -41,7 +44,6 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
         PaperSignsPlugin(this)
     }
 
-
     override fun bootstrap(context: BootstrapContext) {
         try {
             initializeSignManager(context)
@@ -59,7 +61,8 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
         signManager = SignManager(
             controllerApi,
             context.dataDirectory,
-            PaperLocationMapper
+            PaperLocationMapper,
+            PaperRuleRegistry()
         ) { cloudSign, frameConfig ->
             updateSign(cloudSign, frameConfig)
         }
@@ -98,18 +101,30 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
         plugin.server.scheduler.runTask(plugin, Runnable {
             try {
                 val sign = location.block.state as? Sign ?: return@Runnable
-                updateSignLines(sign, frameConfig, cloudSign)
+
+                val onlinePlayers = plugin.server.onlinePlayers
+
+                onlinePlayers.forEach { player ->
+                    val playerRuleContext = PlayerRuleContext(
+                        server = cloudSign.server,
+                        serverState = cloudSign.server?.state,
+                        player
+                    )
+
+                    updateSignLines(sign, frameConfig, cloudSign, playerRuleContext)
+                }
+
             } catch (e: Exception) {
                 logger.error("Failed to update sign at location: $location", e)
             }
         })
     }
 
-    private fun updateSignLines(sign: Sign, frameConfig: FrameConfig, cloudSign: CloudSign<*>) {
+    private fun updateSignLines(sign: Sign, frameConfig: FrameConfig, cloudSign: CloudSign<*>, context: RuleContext) {
         clearSignLines(sign)
 
         frameConfig.lines.forEachIndexed { index, line ->
-            val resolvedLine = miniMessage.deserialize(line, *getPlaceholders(cloudSign).toTypedArray())
+            val resolvedLine = miniMessage.deserialize(line, *getPlaceholders(cloudSign, context).toTypedArray())
             sign.getSide(Side.FRONT).line(index, resolvedLine)
             sign.getSide(Side.BACK).line(index, resolvedLine)
         }
@@ -123,7 +138,7 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
         sign.getSide(Side.BACK).lines().replaceAll { emptyComponent }
     }
 
-    private fun getPlaceholders(cloudSign: CloudSign<*>): List<TagResolver.Single> = buildList {
+    private fun getPlaceholders(cloudSign: CloudSign<*>, context: RuleContext): List<TagResolver.Single> = buildList {
         with(cloudSign.server) {
             add(Placeholder.parsed("group", this?.group ?: "unknown"))
             add(Placeholder.parsed("numerical-id", this?.numericalId?.toString() ?: "0"))
@@ -136,6 +151,11 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
             add(Placeholder.parsed("max-players", this?.maxPlayers?.toString() ?: "0"))
             add(Placeholder.parsed("player-count", this?.playerCount?.toString() ?: "0"))
             add(Placeholder.parsed("state", this?.state?.toString() ?: "unknown"))
+        }
+
+        if (context is PlayerRuleContext) {
+            add(Placeholder.parsed("player_name", context.player.name))
+            add(Placeholder.parsed("player_sender", context.player.server.name))
         }
     }
 }

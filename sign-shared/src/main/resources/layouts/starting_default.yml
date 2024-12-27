@@ -1,6 +1,6 @@
 name: 'starting_default'
 rule: 'STARTING'
-priority: 10
+priority: 6
 frame-update-interval: 500
 
 frames:

@@ -1,13 +1,21 @@
 package app.simplecloud.plugin.sign.shared.repository.base
 
+import app.simplecloud.plugin.sign.shared.rule.RuleRegistry
+import app.simplecloud.plugin.sign.shared.rule.SignRule
+import io.leangen.geantyref.TypeToken
 import kotlinx.coroutines.*
+import org.spongepowered.configurate.ConfigurationNode
 import org.spongepowered.configurate.ConfigurationOptions
 import org.spongepowered.configurate.kotlin.objectMapperFactory
 import org.spongepowered.configurate.loader.ParsingException
+import org.spongepowered.configurate.serialize.SerializationException
+import org.spongepowered.configurate.serialize.TypeSerializer
+import org.spongepowered.configurate.serialize.TypeSerializerCollection
 import org.spongepowered.configurate.yaml.NodeStyle
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader
 import java.io.File
 import java.io.FileOutputStream
+import java.lang.reflect.Type
 import java.net.URL
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -20,11 +28,14 @@ import kotlin.io.path.pathString
 abstract class YamlDirectoryRepository<I, E>(
     private val directory: Path,
     private val clazz: Class<E>,
+    private val ruleRegistry: RuleRegistry? = null
 ) : LoadableRepository<I, E> {
 
     private val watchService = FileSystems.getDefault().newWatchService()
     private val loaders = mutableMapOf<File, YamlConfigurationLoader>()
     protected val entities = mutableMapOf<File, E>()
+
+    private var serializers: TypeSerializerCollection? = null
 
     abstract fun getFileName(identifier: I): String
 
@@ -37,7 +48,9 @@ abstract class YamlDirectoryRepository<I, E>(
         return entities.values.toList()
     }
 
-    override fun load(): List<E> {
+    override fun load(serializers: TypeSerializerCollection?): List<E> {
+        this.serializers = serializers
+
         if (!directory.toFile().exists()) {
             directory.toFile().mkdirs()
             loadDefaults()
@@ -90,6 +103,26 @@ abstract class YamlDirectoryRepository<I, E>(
                 .nodeStyle(NodeStyle.BLOCK)
                 .defaultOptions { options ->
                     options.serializers { builder ->
+                        serializers?.let { builder.registerAll(it) }
+
+                        ruleRegistry?.let { registry ->
+                            builder.register(TypeToken.get(SignRule::class.java), object : TypeSerializer<SignRule> {
+                                override fun deserialize(type: Type, node: ConfigurationNode): SignRule {
+                                    val ruleName =
+                                        node.string ?: throw SerializationException("Rule name cannot be null")
+
+                                    return registry.getRule(ruleName)
+                                        ?: throw SerializationException("Unknown rule: $ruleName")
+                                }
+
+                                override fun serialize(type: Type, obj: SignRule?, node: ConfigurationNode) {
+                                    if (obj != null) {
+                                        node.set(obj.getRuleName())
+                                    }
+                                }
+                            })
+                        }
+
                         builder.registerAnnotatedObjects(objectMapperFactory())
                     }
                 }.build()

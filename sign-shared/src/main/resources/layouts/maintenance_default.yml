@@ -1,6 +1,6 @@
 name: 'maintenance_default'
 rule: 'MAINTENANCE'
-priority: 10
+priority: 7
 frame-update-interval: 1000
 
 frames:

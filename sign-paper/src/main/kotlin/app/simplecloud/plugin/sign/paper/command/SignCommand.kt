@@ -1,6 +1,8 @@
 package app.simplecloud.plugin.sign.paper.command
 
+import app.simplecloud.plugin.sign.paper.PaperSignsPlugin
 import app.simplecloud.plugin.sign.paper.PaperSignsPluginBootstrap
+import app.simplecloud.plugin.sign.paper.dispatcher.BukkitMainDispatcher
 import build.buf.gen.simplecloud.controller.v1.ServerType
 import io.grpc.StatusException
 import kotlinx.coroutines.*
@@ -227,11 +229,12 @@ class SignCommand(private val bootstrap: PaperSignsPluginBootstrap) : CoroutineS
     }
 
     private suspend fun unregisterSign(location: Location) {
-        val sign = location.block.state as Sign
+        withContext(BukkitMainDispatcher(PaperSignsPlugin.instance)) {
+            val sign = location.block.state as Sign
 
-        withContext(Dispatchers.Main) {
             sign.getSide(Side.FRONT).lines().replaceAll { Component.text("") }
             sign.getSide(Side.BACK).lines().replaceAll { Component.text("") }
+
             sign.update()
         }
 
