@@ -1,20 +1,19 @@
 [versions]
-kotlin = "2.0.0"
-shadow = "8.3.3"
-simplecloud-controller = "0.0.30-dev.e3e27fc"
+kotlin = "2.1.0"
+shadow = "9.0.0-beta4"
+simplecloud-controller = "0.0.30-dev.16f91aa"
 paper = "1.21.4-R0.1-SNAPSHOT"
 cloud-commands = "2.0.0-beta.10"
-cloud-annotations = "2.0.0"
 cloud-confirmation-processors = "1.0.0-rc.1"
 
 [libraries]
 kotlin-jvm = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
+
 cloud-minecraft-extras = { module = "org.incendo:cloud-minecraft-extras", version.ref = "cloud-commands" }
 cloud-paper = { module = "org.incendo:cloud-paper", version.ref = "cloud-commands" }
 cloud-processors-confirmation = { module = "org.incendo:cloud-processors-confirmation", version.ref = "cloud-confirmation-processors" }
-cloud-annotations = { module = "org.incendo:cloud-annotations", version.ref = "cloud-annotations" }
 
 simplecloud-controller-api = { module = "app.simplecloud.controller:controller-api", version.ref = "simplecloud-controller" }
 

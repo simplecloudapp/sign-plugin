@@ -1,0 +1,11 @@
+name: 'maintenance_default'
+rule: 'MAINTENANCE'
+priority: 10
+frame-update-interval: 1000
+
+frames:
+  - lines:
+      - '<color:#aa903a>🚧</color>'
+      - '<group>-<numerical-id>'
+      - '<color:#aa903a><b>MAINTENANCE</b></color>'
+      - '<color:#aa903a>🚧</color>'

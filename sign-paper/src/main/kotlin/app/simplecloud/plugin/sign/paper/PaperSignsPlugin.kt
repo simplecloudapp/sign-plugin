@@ -1,37 +1,47 @@
 package app.simplecloud.plugin.sign.paper
 
 import app.simplecloud.plugin.sign.paper.listener.SignListener
-import app.simplecloud.plugin.sign.shared.SignManager
 import com.google.common.io.ByteStreams
+import kotlinx.coroutines.runBlocking
 import org.bukkit.Bukkit
-import org.bukkit.Location
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
-import org.incendo.cloud.paper.PaperCommandManager
-import org.incendo.cloud.paper.util.sender.Source
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class PaperSignsPlugin(
-    val signManager: SignManager<Location>,
-    private val commandManager: PaperCommandManager.Bootstrapped<Source>
+    val bootstrap: PaperSignsPluginBootstrap
 ) : JavaPlugin() {
+
+    private val logger: Logger = LoggerFactory.getLogger(PaperSignsPlugin::class.java)
 
     companion object {
         lateinit var instance: PaperSignsPlugin
             private set
     }
 
-    override fun onEnable() {
+    override fun onLoad() {
         instance = this
+    }
+
+    override fun onEnable() {
         server.messenger.registerOutgoingPluginChannel(this, "BungeeCord")
 
         Bukkit.getPluginManager().registerEvents(SignListener(this), this)
 
-        signManager.start()
-        commandManager.onEnable()
+        bootstrap.signManager.start()
+        bootstrap.commandManager.onEnable()
     }
 
     override fun onDisable() {
-        signManager.stop()
+        runBlocking {
+            try {
+                bootstrap.signManager.stop()
+                bootstrap.disable()
+            } catch (e: Exception) {
+                logger.error("Error stopping SignManager", e)
+            }
+        }
     }
 
     fun sendPlayerToServer(player: Player, serverName: String) {

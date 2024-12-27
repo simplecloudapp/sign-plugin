@@ -12,14 +12,15 @@ data class LayoutConfig(
     val matcher: Map<MatcherType, List<MatcherConfigEntry>> = emptyMap(),
     val rule: SignRule = SignRule.EMPTY,
     val priority: Int = 0,
-    val displayName: String = "%group%-%numerical-id%",
+    val serverName: String = "%group%-%numerical-id%",
     val frameUpdateInterval: Long = 500,
     val frames: List<FrameConfig> = listOf(),
 ) {
 
     fun constructName(server: Server): String {
-        return displayName
+        return serverName
             .replace("%group%", server.group)
             .replace("%numerical-id%", server.numericalId.toString())
     }
+
 }

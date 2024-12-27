@@ -1,0 +1,11 @@
+name: 'full_default'
+rule: 'FULL'
+priority: 10
+frame-update-interval: 1250
+
+frames:
+  - lines:
+      - '<color:#ff4747>⛔</color>'
+      - '<group>-<numerical-id>'
+      - '<color:#ff4747><b>FULL</b></color>'
+      - '<player-count>/<max-players>'

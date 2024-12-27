@@ -15,12 +15,6 @@ allprojects {
         mavenCentral()
         mavenLocal()
         maven {
-            url = uri("https://oss.sonatype.org/content/repositories/snapshots")
-        }
-        maven {
-            url = uri("https://libraries.minecraft.net")
-        }
-        maven {
             url = uri("https://repo.papermc.io/repository/maven-public/")
         }
         maven("https://buf.build/gen/maven")
@@ -46,6 +40,10 @@ subprojects {
             compilerOptions {
                 jvmTarget.set(JvmTarget.JVM_21)
             }
+        }
+
+        withType<JavaCompile> {
+            options.encoding = "UTF-8"
         }
 
         named("shadowJar", ShadowJar::class) {

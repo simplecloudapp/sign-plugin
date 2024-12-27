@@ -7,6 +7,7 @@ import org.spongepowered.configurate.loader.ParsingException
 import org.spongepowered.configurate.yaml.NodeStyle
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader
 import java.io.File
+import java.io.FileOutputStream
 import java.net.URL
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -44,7 +45,7 @@ abstract class YamlDirectoryRepository<I, E>(
 
         registerWatcher()
 
-        return Files.list(directory)
+        return Files.walk(directory)
             .toList()
             .filter { !it.toFile().isDirectory && it.toString().endsWith(".yml") }
             .mapNotNull { load(it.toFile()) }
@@ -169,9 +170,15 @@ abstract class YamlDirectoryRepository<I, E>(
                         val targetFile = File(targetDirectory, entry.name.removePrefix("$last/"))
                         targetFile.parentFile.mkdirs()
                         try {
-                            jarFile.getInputStream(entry).use { resourceStream ->
-                                targetFile.outputStream().use { fileOutputStream ->
-                                    resourceStream.copyTo(fileOutputStream)
+                            jarFile.getInputStream(entry).use { inputStream ->
+                                FileOutputStream(targetFile).use { fos ->
+                                    // Force UTF-8 BOM
+                                    fos.write(0xEF)
+                                    fos.write(0xBB)
+                                    fos.write(0xBF)
+
+                                    //copy content
+                                    inputStream.copyTo(fos)
                                 }
                             }
                         } catch (e: Exception) {

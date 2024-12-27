@@ -16,14 +16,12 @@ data class SignListener(private val plugin: PaperSignsPlugin) : Listener {
 
         val sign = (event.clickedBlock?.state as? Sign) ?: return
 
-        plugin.signManager.getCloudSign(sign.location)?.let { cloudSign ->
+        plugin.bootstrap.signManager.getCloudSign(sign.location)?.let { cloudSign ->
             event.isCancelled = true
 
             cloudSign.server?.let { server ->
-                val serverName = plugin.signManager.getLayout(server).constructName(server)
+                val serverName = plugin.bootstrap.signManager.getLayout(server).constructName(server)
                 plugin.sendPlayerToServer(event.player, serverName)
-
-                plugin.signManager.getCloudSignsByGroup(server.group)?.forEach { plugin.signManager.updateSign(it) }
             }
         }
     }
@@ -32,7 +30,7 @@ data class SignListener(private val plugin: PaperSignsPlugin) : Listener {
     fun handleSignBreak(event: BlockBreakEvent) {
         val sign = (event.block.state as? Sign) ?: return
 
-        plugin.signManager.getCloudSign(sign.location)?.let {
+        plugin.bootstrap.signManager.getCloudSign(sign.location)?.let {
             event.isCancelled = true
         }
     }
