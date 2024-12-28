@@ -411,17 +411,23 @@ $navigationButtons""".trimIndent()
                     SignMessages.SIGN_REMOVE_GROUP_NOT_REGISTERED.replace("<group>", group)
                 )
 
-            coroutineScope {
-                locations.map { location ->
-                    async {
-                        val mapLocation = bootstrap.signManager.mapLocation(location)
-                        bootstrap.signManager.removeCloudSign(mapLocation)
-                        clearSign(mapLocation)
-                    }
-                }.awaitAll()
+            val amount = locations.size
+
+            // First remove all signs from the manager
+            locations.forEach { location ->
+                val mapLocation = bootstrap.signManager.mapLocation(location)
+                bootstrap.signManager.removeCloudSign(mapLocation)
             }
 
-            CommandResult.Success(mapOf("amount" to locations.size))
+            // Then clear all sign blocks in the world
+            withContext(BukkitMainDispatcher(PaperSignsPlugin.instance)) {
+                locations.forEach { location ->
+                    val mapLocation = bootstrap.signManager.mapLocation(location)
+                    clearSign(mapLocation)
+                }
+            }
+
+            CommandResult.Success(mapOf("amount" to amount))
         }.getOrElse { e ->
             logger.error("Error removing group signs", e)
             CommandResult.Error(SignMessages.GENERAL_ERROR)
