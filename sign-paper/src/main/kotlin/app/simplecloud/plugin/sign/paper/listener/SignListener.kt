@@ -11,6 +11,8 @@ import org.bukkit.event.player.PlayerInteractEvent
 
 data class SignListener(private val plugin: PaperSignsPlugin) : Listener {
 
+    //TODO: Add Click Catching for Different Rules e.g handle click on sign that is staring/offline/current_server
+
     @EventHandler
     fun handleSignInteract(event: PlayerInteractEvent) {
         if (event.action != Action.RIGHT_CLICK_BLOCK || event.clickedBlock == null) return

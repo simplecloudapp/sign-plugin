@@ -72,6 +72,7 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
         commandManager = PaperCommandManager.builder(PaperSimpleSenderMapper.simpleSenderMapper())
             .executionCoordinator(ExecutionCoordinator.simpleCoordinator())
             .buildBootstrapped(context)
+
     }
 
     private fun registerCommands() {
