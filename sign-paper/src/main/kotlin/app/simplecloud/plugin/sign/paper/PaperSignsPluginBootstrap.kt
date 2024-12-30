@@ -1,11 +1,15 @@
 package app.simplecloud.plugin.sign.paper
 
 import app.simplecloud.controller.api.ControllerApi
-import app.simplecloud.plugin.sign.paper.command.SignCommand
+import app.simplecloud.plugin.sign.paper.dispatcher.PaperPlatformDispatcher
 import app.simplecloud.plugin.sign.paper.rule.PaperRuleRegistry
 import app.simplecloud.plugin.sign.paper.rule.PlayerRuleContext
+import app.simplecloud.plugin.sign.paper.sender.PaperCommandSender
+import app.simplecloud.plugin.sign.paper.sender.PaperCommandSenderMapper
+import app.simplecloud.plugin.sign.paper.service.PaperSignService
 import app.simplecloud.plugin.sign.shared.CloudSign
 import app.simplecloud.plugin.sign.shared.SignManager
+import app.simplecloud.plugin.sign.shared.command.SignCommand
 import app.simplecloud.plugin.sign.shared.config.layout.FrameConfig
 import app.simplecloud.plugin.sign.shared.rule.impl.RuleContext
 import io.papermc.paper.plugin.bootstrap.BootstrapContext
@@ -22,8 +26,6 @@ import org.bukkit.block.sign.Side
 import org.bukkit.plugin.java.JavaPlugin
 import org.incendo.cloud.execution.ExecutionCoordinator
 import org.incendo.cloud.paper.PaperCommandManager
-import org.incendo.cloud.paper.util.sender.PaperSimpleSenderMapper
-import org.incendo.cloud.paper.util.sender.Source
 import org.slf4j.LoggerFactory
 
 @Suppress("UnstableApiUsage")
@@ -35,14 +37,14 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
 
     lateinit var signManager: SignManager<Location>
         private set
-    lateinit var commandManager: PaperCommandManager.Bootstrapped<Source>
+    lateinit var commandManager: PaperCommandManager.Bootstrapped<PaperCommandSender>
         private set
 
-    private var signCommand: SignCommand? = null
+    val platformDispatcher = PaperPlatformDispatcher(this)
+    private var signCommand: SignCommand<PaperCommandSender, Location>? = null
 
-    private val plugin by lazy {
-        PaperSignsPlugin(this)
-    }
+
+    val plugin by lazy { PaperSignsPlugin(this) }
 
     override fun bootstrap(context: BootstrapContext) {
         try {
@@ -61,7 +63,7 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
         signManager = SignManager(
             controllerApi,
             context.dataDirectory,
-            PaperLocationMapper,
+            PaperSignService(this),
             PaperRuleRegistry()
         ) { cloudSign, frameConfig ->
             updateSign(cloudSign, frameConfig)
@@ -69,22 +71,24 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
     }
 
     private fun initializeCommandManager(context: BootstrapContext) {
-        commandManager = PaperCommandManager.builder(PaperSimpleSenderMapper.simpleSenderMapper())
+        commandManager = PaperCommandManager.builder(PaperCommandSenderMapper(this))
             .executionCoordinator(ExecutionCoordinator.simpleCoordinator())
             .buildBootstrapped(context)
 
     }
 
     private fun registerCommands() {
-        signCommand = SignCommand(this).apply {
+        signCommand = SignCommand(
+            commandManager,
+            PaperSignService(this),
+            PaperSignStateManager(this),
+            platformDispatcher
+        ).apply {
             register()
         }
     }
 
-    fun getControllerAPI(): ControllerApi.Coroutine = controllerApi
-
     override fun createPlugin(context: PluginProviderContext): JavaPlugin = plugin
-
     fun disable() {
         runBlocking {
             try {

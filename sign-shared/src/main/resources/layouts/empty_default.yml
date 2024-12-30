@@ -1,6 +1,6 @@
 name: 'empty_default'
 rule: 'EMPTY'
-priority: 5
+priority: 10
 frame-update-interval: 1000
 
 frames:

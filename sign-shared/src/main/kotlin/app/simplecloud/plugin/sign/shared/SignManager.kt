@@ -14,18 +14,19 @@ import app.simplecloud.plugin.sign.shared.rule.RuleRegistry
 import app.simplecloud.plugin.sign.shared.rule.SignRule
 import app.simplecloud.plugin.sign.shared.rule.impl.RuleContext
 import app.simplecloud.plugin.sign.shared.rule.serialize.SignRuleSerializer
+import app.simplecloud.plugin.sign.shared.service.SignService
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import org.spongepowered.configurate.serialize.TypeSerializerCollection
 import java.nio.file.Path
 
 class SignManager<T : Any>(
-    controllerApi: ControllerApi.Coroutine,
+    override val controllerApi: ControllerApi.Coroutine,
     directoryPath: Path,
     private val locationMapper: LocationMapper<T>,
     private val ruleRegistry: RuleRegistry,
     private val signUpdater: SignUpdater<T>
-) {
+) : SignService<T> {
 
     private val logger = LoggerFactory.getLogger(SignManager::class.java)
 
@@ -71,15 +72,42 @@ class SignManager<T : Any>(
             updateJob?.cancelAndJoin()
             scope.cancel()
             serverCache.stopCacheJob()
+            state.clear()
         }.onFailure { error ->
             logger.error("Error during SignManager shutdown", error)
         }
     }
 
-    fun register(groupName: String, location: T) {
-        logger.debug("Registering new location for group: {}", groupName)
-        locationsRepository.saveLocation(groupName, location)
+    override fun register(group: String, location: T) {
+        logger.debug("Registering new location for group: {}", group)
+        locationsRepository.saveLocation(group, location)
     }
+
+    override fun getCloudSign(location: T): CloudSign<T>? =
+        state.getCloudSign(location)
+
+    override fun getAllLocations(): List<SignLocation> =
+        locationsRepository.getAll().map { it.locations }.flatten()
+
+    override fun getAllGroupsRegistered(): List<String> =
+        locationsRepository.getAll()
+            .map { it.group }
+            .distinct()
+
+    override fun getLocationsByGroup(group: String): List<SignLocation>? =
+        locationsRepository.find(group)?.locations
+
+    override suspend fun removeCloudSign(location: T) {
+        state.removeCloudSign(location)
+        locationsRepository.removeLocation(location)
+    }
+
+    override fun exists(group: String): Boolean =
+        locationsRepository.getAll().any { it.group == group }
+
+    override fun map(location: SignLocation): T = locationMapper.map(location)
+
+    override fun unmap(location: T): SignLocation = locationMapper.unmap(location)
 
     fun getLayout(context: RuleContext): LayoutConfig {
         val serverName = "${context.server?.group}-${context.server?.numericalId}"
@@ -113,28 +141,6 @@ class SignManager<T : Any>(
 
         return true
     }
-
-    fun getCloudSign(location: T): CloudSign<T>? =
-        state.getCloudSign(location)
-
-    fun getAllGroupsRegistered(): List<String> =
-        locationsRepository.getAll()
-            .map { it.group }
-            .distinct()
-
-    fun getLocationsByGroup(group: String): List<SignLocation>? =
-        locationsRepository.find(group)?.locations
-
-    fun mapLocation(location: SignLocation): T =
-        locationMapper.map(location)
-
-    suspend fun removeCloudSign(location: T) {
-        state.removeCloudSign(location)
-        locationsRepository.removeLocation(location)
-    }
-
-    fun exists(group: String): Boolean =
-        locationsRepository.getAll().any { it.group == group }
 
     private fun loadConfigurations() {
         locationsRepository.load()

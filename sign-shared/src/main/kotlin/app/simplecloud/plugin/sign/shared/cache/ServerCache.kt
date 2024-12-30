@@ -6,7 +6,7 @@ import app.simplecloud.plugin.sign.shared.repository.location.LocationsRepositor
 import com.google.common.collect.Multimaps
 import kotlinx.coroutines.*
 
-class ServerCache<T>(
+class ServerCache<T : Any>(
     private val controllerApi: ControllerApi.Coroutine,
     private val locationsRepository: LocationsRepository<T>
 ) {

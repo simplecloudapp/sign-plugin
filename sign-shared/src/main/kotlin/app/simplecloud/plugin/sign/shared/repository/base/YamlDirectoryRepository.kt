@@ -205,12 +205,10 @@ abstract class YamlDirectoryRepository<I, E>(
                         try {
                             jarFile.getInputStream(entry).use { inputStream ->
                                 FileOutputStream(targetFile).use { fos ->
-                                    // Force UTF-8 BOM
                                     fos.write(0xEF)
                                     fos.write(0xBB)
                                     fos.write(0xBF)
 
-                                    //copy content
                                     inputStream.copyTo(fos)
                                 }
                             }
