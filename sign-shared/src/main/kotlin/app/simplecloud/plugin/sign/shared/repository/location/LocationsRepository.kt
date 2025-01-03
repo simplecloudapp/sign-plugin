@@ -3,10 +3,11 @@ package app.simplecloud.plugin.sign.shared.repository.location
 import app.simplecloud.plugin.sign.shared.LocationMapper
 import app.simplecloud.plugin.sign.shared.config.location.LocationsConfig
 import app.simplecloud.plugin.sign.shared.repository.base.YamlDirectoryRepository
+import java.nio.file.Files
 import java.nio.file.Path
 
 @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
-class LocationsRepository<T>(
+class LocationsRepository<T : Any>(
     private val directoryPath: Path,
     private val locationMapper: LocationMapper<T>,
 ) : YamlDirectoryRepository<String, LocationsConfig>(directoryPath, LocationsConfig::class.java) {
@@ -36,6 +37,10 @@ class LocationsRepository<T>(
                 locations = config.locations + signLocation
             )
         )
+    }
+
+    fun removeLocationGroup(group: String) {
+        Files.delete(directoryPath.resolve(getFileName(group)))
     }
 
     fun removeLocation(location: T) {

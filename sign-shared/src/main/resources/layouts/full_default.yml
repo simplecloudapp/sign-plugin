@@ -1,6 +1,6 @@
 name: 'full_default'
 rule: 'FULL'
-priority: 10
+priority: 8
 frame-update-interval: 1250
 
 frames:

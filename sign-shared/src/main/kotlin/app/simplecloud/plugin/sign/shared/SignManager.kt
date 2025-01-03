@@ -10,19 +10,26 @@ import app.simplecloud.plugin.sign.shared.config.matcher.MatcherConfigEntry
 import app.simplecloud.plugin.sign.shared.config.matcher.MatcherType
 import app.simplecloud.plugin.sign.shared.repository.layout.LayoutRepository
 import app.simplecloud.plugin.sign.shared.repository.location.LocationsRepository
+import app.simplecloud.plugin.sign.shared.rule.RuleRegistry
 import app.simplecloud.plugin.sign.shared.rule.SignRule
+import app.simplecloud.plugin.sign.shared.rule.impl.RuleContext
+import app.simplecloud.plugin.sign.shared.rule.serialize.SignRuleSerializer
+import app.simplecloud.plugin.sign.shared.service.SignService
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
+import org.spongepowered.configurate.serialize.TypeSerializerCollection
 import java.nio.file.Path
 
 class SignManager<T : Any>(
-    controllerApi: ControllerApi.Coroutine,
+    override val controllerApi: ControllerApi.Coroutine,
     directoryPath: Path,
     private val locationMapper: LocationMapper<T>,
+    private val ruleRegistry: RuleRegistry,
     private val signUpdater: SignUpdater<T>
-) {
+) : SignService<T> {
 
     private val logger = LoggerFactory.getLogger(SignManager::class.java)
+
     private val state = SignState<T>()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var updateJob: Job? = null
@@ -32,10 +39,18 @@ class SignManager<T : Any>(
         locationMapper
     )
     private val layoutRepository = LayoutRepository(
-        directoryPath.resolve("layouts")
+        directoryPath.resolve("layouts"),
     )
 
+    private val serializers = TypeSerializerCollection.defaults().childBuilder().apply {
+        register(SignRule::class.java, SignRuleSerializer(ruleRegistry))
+    }.build()
+
     private val serverCache = ServerCache(controllerApi, locationsRepository)
+
+    init {
+        setRuleRegistry(ruleRegistry)
+    }
 
     fun start() {
         logger.info("Starting SignManager")
@@ -57,24 +72,53 @@ class SignManager<T : Any>(
             updateJob?.cancelAndJoin()
             scope.cancel()
             serverCache.stopCacheJob()
+            state.clear()
         }.onFailure { error ->
             logger.error("Error during SignManager shutdown", error)
         }
     }
 
-    fun register(groupName: String, location: T) {
-        logger.debug("Registering new location for group: {}", groupName)
-        locationsRepository.saveLocation(groupName, location)
+    override fun register(group: String, location: T) {
+        logger.debug("Registering new location for group: {}", group)
+        locationsRepository.saveLocation(group, location)
     }
 
-    fun getLayout(server: Server?): LayoutConfig {
-        val serverName = "${server?.group}-${server?.numericalId}"
+    override fun getCloudSign(location: T): CloudSign<T>? =
+        state.getCloudSign(location)
+
+    override fun getAllLocations(): List<SignLocation> =
+        locationsRepository.getAll().map { it.locations }.flatten()
+
+    override fun getAllGroupsRegistered(): List<String> =
+        locationsRepository.getAll()
+            .map { it.group }
+            .distinct()
+
+    override fun getLocationsByGroup(group: String): List<SignLocation>? =
+        locationsRepository.find(group)?.locations
+
+    override suspend fun removeCloudSign(location: T) {
+        state.removeCloudSign(location)
+        locationsRepository.removeLocation(location)
+    }
+
+    override fun exists(group: String): Boolean =
+        locationsRepository.getAll().any { it.group == group }
+
+    override fun map(location: SignLocation): T = locationMapper.map(location)
+
+    override fun unmap(location: T): SignLocation = locationMapper.unmap(location)
+
+    fun getLayout(context: RuleContext): LayoutConfig {
+        val serverName = "${context.server?.group}-${context.server?.numericalId}"
 
         return layoutRepository.getAll()
             .asSequence()
             .sortedByDescending { it.priority }
-            .filter { it.rule.checker.check(server) }
-            .firstOrNull { layout -> checkMatches(layout.matcher, serverName) }
+            .filter { layoutConfig ->
+                val rule = ruleRegistry.getRule(layoutConfig.rule.getRuleName())
+                rule?.checker?.check(context) == true
+            }.firstOrNull { layoutConfig -> checkMatches(layoutConfig.matcher, serverName) }
             ?: LayoutConfig()
     }
 
@@ -98,34 +142,9 @@ class SignManager<T : Any>(
         return true
     }
 
-    fun getCloudSign(location: T): CloudSign<T>? =
-        state.getCloudSign(location)
-
-    fun getCloudSignsByGroup(group: String): List<CloudSign<T>>? =
-        state.getCloudSignsByGroup(group)
-
-    fun getAllGroupsRegistered(): List<String> =
-        locationsRepository.getAll()
-            .map { it.group }
-            .distinct()
-
-    fun getLocationsByGroup(group: String): List<SignLocation>? =
-        locationsRepository.find(group)?.locations
-
-    fun mapLocation(location: SignLocation): T =
-        locationMapper.map(location)
-
-    suspend fun removeCloudSign(location: T) {
-        state.removeCloudSign(location)
-        locationsRepository.removeLocation(location)
-    }
-
-    fun exists(group: String): Boolean =
-        locationsRepository.getAll().any { it.group == group }
-
     private fun loadConfigurations() {
         locationsRepository.load()
-        layoutRepository.load()
+        layoutRepository.load(serializers)
         logger.info("Loaded {} Sign Layouts", layoutRepository.getAll().size)
     }
 
@@ -157,7 +176,10 @@ class SignManager<T : Any>(
             .filterNot { server ->
                 state.isServerAssigned(server.uniqueId)
             }
-            .filter { SignRule.hasRule(it.state) }
+            .filter { server ->
+                val context = RuleContext(server, server.state)
+                ruleRegistry.getRules().any { rule -> rule.checker.check(context) }
+            }
             .sortedBy { it.numericalId }
             .iterator()
 
@@ -190,7 +212,9 @@ class SignManager<T : Any>(
     private suspend fun updateSign(cloudSign: CloudSign<T>) {
         state.updateCloudSign(cloudSign.location, cloudSign)
 
-        val layout = getLayout(cloudSign.server)
+        val context = RuleContext(cloudSign.server, cloudSign.server?.state)
+
+        val layout = getLayout(context)
         if (layout.frames.isEmpty()) {
             return
         }
@@ -210,6 +234,14 @@ class SignManager<T : Any>(
 
     companion object {
         private const val UPDATE_INTERVAL = 50L
+
+        private var staticRuleRegistry: RuleRegistry? = null
+
+        fun getRuleRegistry(): RuleRegistry? = staticRuleRegistry
+
+        fun setRuleRegistry(registry: RuleRegistry) {
+            staticRuleRegistry = registry
+        }
     }
 }
 
