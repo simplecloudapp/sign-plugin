@@ -43,14 +43,6 @@ jobs:
           echo "version=$(./gradlew properties -q | grep "version:" | awk '{print $2}')" >> $GITHUB_OUTPUT
           echo "commit=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Delete existing release and tag
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG_NAME: v${{ steps.vars.outputs.version }}-dev.${{ steps.vars.outputs.commit }}
-        run: |
-          gh release delete $TAG_NAME --yes || true
-          git push origin :refs/tags/$TAG_NAME || true
-
       - name: Publish to Modrinth
         run: ./gradlew modrinth && ./gradlew modrinthSyncBody
         env:
