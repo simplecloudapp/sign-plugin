@@ -1,8 +1,10 @@
 [versions]
 kotlin = "2.1.0"
 shadow = "9.0.0-beta4"
-simplecloud-controller = "0.0.30-dev.16f91aa"
 paper = "1.21.4-R0.1-SNAPSHOT"
+
+simplecloud-controller = "0.0.30-dev.16f91aa"
+simplecloud-plugin-api = "0.0.1-dev.e7b12c9"
 
 cloud-core = "2.0.0"
 cloud-commands = "2.0.0-beta.10"
@@ -27,6 +29,7 @@ cloud-paper = { module = "org.incendo:cloud-paper", version.ref = "cloud-command
 cloud-processors-confirmation = { module = "org.incendo:cloud-processors-confirmation", version.ref = "cloud-confirmation-processors" }
 
 simplecloud-controller-api = { module = "app.simplecloud.controller:controller-api", version.ref = "simplecloud-controller" }
+simplecloud-plugin-api = { module = "app.simplecloud.plugin:plugin-shared", version.ref = "simplecloud-plugin-api" }
 
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutine" }
 coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutine" }
@@ -39,6 +42,7 @@ cloud-core = ["cloud-core", "cloud-kotlin-coroutines", "cloud-kotlin-extensions"
 cloud-paper = ["cloud-paper", "cloud-minecraft-extras", "cloud-processors-confirmation"]
 coroutine = ["coroutines-core", "coroutines-android"]
 adventure = ["adventure", "adventure-text-minimessage"]
+simplecloud = ["simplecloud-controller-api", "simplecloud-plugin-api"]
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

@@ -1,6 +1,5 @@
 name: 'offline_default'
 rule: 'OFFLINE'
-priority: 50
 frame-update-interval: 500
 
 frames:

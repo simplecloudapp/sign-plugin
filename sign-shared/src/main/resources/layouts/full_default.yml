@@ -1,7 +1,12 @@
 name: 'full_default'
-rule: 'FULL'
-priority: 8
+rule: 'available'
 frame-update-interval: 1250
+
+matcher:
+  MATCH_ALL:
+    - key: '<server_online_players>'
+      value: '<server_max_players>'
+      operation: EQUALS
 
 frames:
   - lines:

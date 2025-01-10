@@ -1,0 +1,7 @@
+name: 'starting'
+
+matcher:
+  MATCH_ALL:
+    - key: '<server_state>'
+      value: 'STARTING'
+      operation: EQUALS

@@ -2,29 +2,28 @@ package app.simplecloud.plugin.sign.shared
 
 import app.simplecloud.controller.api.ControllerApi
 import app.simplecloud.controller.shared.server.Server
+import app.simplecloud.plugin.api.shared.placeholder.provider.GroupPlaceholderProvider
+import app.simplecloud.plugin.api.shared.placeholder.provider.ServerPlaceholderProvider
 import app.simplecloud.plugin.sign.shared.cache.ServerCache
 import app.simplecloud.plugin.sign.shared.config.layout.LayoutConfig
 import app.simplecloud.plugin.sign.shared.config.location.LocationsConfig
-import app.simplecloud.plugin.sign.shared.config.location.SignLocation
-import app.simplecloud.plugin.sign.shared.config.matcher.MatcherConfigEntry
-import app.simplecloud.plugin.sign.shared.config.matcher.MatcherType
+import app.simplecloud.plugin.sign.shared.config.location.SignLocationConfig
+import app.simplecloud.plugin.sign.shared.config.rule.RuleConfig
 import app.simplecloud.plugin.sign.shared.repository.layout.LayoutRepository
 import app.simplecloud.plugin.sign.shared.repository.location.LocationsRepository
-import app.simplecloud.plugin.sign.shared.rule.RuleRegistry
-import app.simplecloud.plugin.sign.shared.rule.SignRule
-import app.simplecloud.plugin.sign.shared.rule.impl.RuleContext
-import app.simplecloud.plugin.sign.shared.rule.serialize.SignRuleSerializer
+import app.simplecloud.plugin.sign.shared.repository.rule.RuleRepository
+import app.simplecloud.plugin.sign.shared.rule.context.RuleContext
+import app.simplecloud.plugin.sign.shared.rule.context.impl.ServerRuleContext
 import app.simplecloud.plugin.sign.shared.service.SignService
+import app.simplecloud.plugin.sign.shared.utils.MatcherUtil
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
-import org.spongepowered.configurate.serialize.TypeSerializerCollection
 import java.nio.file.Path
 
 class SignManager<T : Any>(
     override val controllerApi: ControllerApi.Coroutine,
     directoryPath: Path,
     private val locationMapper: LocationMapper<T>,
-    private val ruleRegistry: RuleRegistry,
     private val signUpdater: SignUpdater<T>
 ) : SignService<T> {
 
@@ -38,18 +37,20 @@ class SignManager<T : Any>(
         directoryPath.resolve("locations"),
         locationMapper
     )
+    private val ruleRepository = RuleRepository(
+        directoryPath.resolve("rules"),
+    )
     private val layoutRepository = LayoutRepository(
         directoryPath.resolve("layouts"),
     )
 
-    private val serializers = TypeSerializerCollection.defaults().childBuilder().apply {
-        register(SignRule::class.java, SignRuleSerializer(ruleRegistry))
-    }.build()
-
     private val serverCache = ServerCache(controllerApi, locationsRepository)
 
+    val groupPlaceholderProvider: GroupPlaceholderProvider = GroupPlaceholderProvider()
+    val serverPlaceholderProvider: ServerPlaceholderProvider = ServerPlaceholderProvider()
+
     init {
-        setRuleRegistry(ruleRegistry)
+        SignManagerProvider.register(this)
     }
 
     fun start() {
@@ -86,7 +87,7 @@ class SignManager<T : Any>(
     override fun getCloudSign(location: T): CloudSign<T>? =
         state.getCloudSign(location)
 
-    override fun getAllLocations(): List<SignLocation> =
+    override fun getAllLocations(): List<SignLocationConfig> =
         locationsRepository.getAll().map { it.locations }.flatten()
 
     override fun getAllGroupsRegistered(): List<String> =
@@ -94,7 +95,7 @@ class SignManager<T : Any>(
             .map { it.group }
             .distinct()
 
-    override fun getLocationsByGroup(group: String): List<SignLocation>? =
+    override fun getLocationsByGroup(group: String): List<SignLocationConfig>? =
         locationsRepository.find(group)?.locations
 
     override suspend fun removeCloudSign(location: T) {
@@ -105,47 +106,33 @@ class SignManager<T : Any>(
     override fun exists(group: String): Boolean =
         locationsRepository.getAll().any { it.group == group }
 
-    override fun map(location: SignLocation): T = locationMapper.map(location)
-
-    override fun unmap(location: T): SignLocation = locationMapper.unmap(location)
-
-    fun getLayout(context: RuleContext): LayoutConfig {
-        val serverName = "${context.server?.group}-${context.server?.numericalId}"
-
-        return layoutRepository.getAll()
-            .asSequence()
-            .sortedByDescending { it.priority }
-            .filter { layoutConfig ->
-                val rule = ruleRegistry.getRule(layoutConfig.rule.getRuleName())
-                rule?.checker?.check(context) == true
-            }.firstOrNull { layoutConfig -> checkMatches(layoutConfig.matcher, serverName) }
-            ?: LayoutConfig()
+    override fun getAllRules(): List<RuleConfig> {
+        return ruleRepository.getAll()
     }
 
-    private fun checkMatches(matchers: Map<MatcherType, List<MatcherConfigEntry>>, serverName: String): Boolean {
-        if (matchers.containsKey(MatcherType.MATCH_ALL)) {
-            val matchAllResult = matchers[MatcherType.MATCH_ALL]?.all {
-                it.operation.matches(serverName, it.value)
-            } ?: false
+    override fun getRule(ruleName: String): RuleConfig? {
+        return ruleRepository.find(ruleName)
+    }
 
-            if (!matchAllResult) {
-                return false
-            }
+    override fun map(location: SignLocationConfig): T = locationMapper.map(location)
+
+    override fun unmap(location: T): SignLocationConfig = locationMapper.unmap(location)
+
+    fun getLayout(ruleContext: RuleContext): LayoutConfig {
+        return layoutRepository.getAll().firstOrNull {
+            MatcherUtil.matches(it.matcher, ruleContext) &&
+                    MatcherUtil.matches(it.rule.matcher, ruleContext)
         }
-
-        if (matchers.containsKey(MatcherType.MATCH_ANY)) {
-            return matchers[MatcherType.MATCH_ANY]?.any {
-                it.operation.matches(serverName, it.value)
-            } ?: false
-        }
-
-        return true
+            ?: LayoutConfig()
     }
 
     private fun loadConfigurations() {
         locationsRepository.load()
-        layoutRepository.load(serializers)
-        logger.info("Loaded {} Sign Layouts", layoutRepository.getAll().size)
+        ruleRepository.load()
+        layoutRepository.load()
+        logger.info("Loaded ${locationsRepository.getAll().size} Sign Locations")
+        logger.info("Loaded ${layoutRepository.getAll().size} Sign Layouts")
+        logger.info("Loaded ${ruleRepository.getAll().size} Sign Rules")
     }
 
     private fun startUpdateSignJob() {
@@ -177,8 +164,8 @@ class SignManager<T : Any>(
                 state.isServerAssigned(server.uniqueId)
             }
             .filter { server ->
-                val context = RuleContext(server, server.state)
-                ruleRegistry.getRules().any { rule -> rule.checker.check(context) }
+                val ruleContext = ServerRuleContext(server)
+                ruleRepository.getAll().any { rule -> MatcherUtil.matches(rule.matcher, ruleContext) }
             }
             .sortedBy { it.numericalId }
             .iterator()
@@ -189,7 +176,7 @@ class SignManager<T : Any>(
     }
 
     private suspend fun processLocation(
-        locationConfig: SignLocation,
+        locationConfig: SignLocationConfig,
         unusedServers: Iterator<Server>,
         allServers: List<Server>
     ) {
@@ -211,10 +198,9 @@ class SignManager<T : Any>(
 
     private suspend fun updateSign(cloudSign: CloudSign<T>) {
         state.updateCloudSign(cloudSign.location, cloudSign)
+        val ruleContext = ServerRuleContext(cloudSign.server)
 
-        val context = RuleContext(cloudSign.server, cloudSign.server?.state)
-
-        val layout = getLayout(context)
+        val layout = getLayout(ruleContext)
         if (layout.frames.isEmpty()) {
             return
         }
@@ -234,14 +220,6 @@ class SignManager<T : Any>(
 
     companion object {
         private const val UPDATE_INTERVAL = 50L
-
-        private var staticRuleRegistry: RuleRegistry? = null
-
-        fun getRuleRegistry(): RuleRegistry? = staticRuleRegistry
-
-        fun setRuleRegistry(registry: RuleRegistry) {
-            staticRuleRegistry = registry
-        }
     }
 }
 

@@ -1,0 +1,7 @@
+name: 'offline'
+
+matcher:
+  MATCH_ALL:
+    - key: '<server_state>'
+      value: 'NULL'
+      operation: EQUALS
