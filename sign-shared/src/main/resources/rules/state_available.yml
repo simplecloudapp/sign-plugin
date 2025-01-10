@@ -1,4 +1,4 @@
-name: 'available'
+name: 'state_available'
 
 matcher:
   MATCH_ALL:

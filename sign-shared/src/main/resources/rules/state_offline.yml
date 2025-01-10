@@ -1,4 +1,4 @@
-name: 'offline'
+name: 'state_offline'
 
 matcher:
   MATCH_ALL:

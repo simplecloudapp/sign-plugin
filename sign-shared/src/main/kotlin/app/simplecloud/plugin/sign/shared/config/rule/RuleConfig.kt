@@ -10,6 +10,3 @@ data class RuleConfig(
     val inherit: String? = null,
     val matcher: Map<MatcherType, List<MatcherConfigEntry>> = emptyMap(),
 )
-
-
-
