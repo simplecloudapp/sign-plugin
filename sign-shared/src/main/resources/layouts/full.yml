@@ -1,5 +1,6 @@
 name: 'full'
 rule: 'full'
+priority: 3
 frame-update-interval: 1250
 
 frames:

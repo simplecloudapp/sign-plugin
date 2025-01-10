@@ -15,7 +15,7 @@ data class LayoutConfig(
     @Setting("rule")
     val ruleName: String = "",
     val priority: Int = 0,
-    val serverName: String = "%group%-%numerical-id%",
+    val serverName: String = "<group_name>-<numerical_id>",
     val frameUpdateInterval: Long = 500,
     val frames: List<FrameConfig> = listOf(),
 ) {
@@ -38,8 +38,8 @@ data class LayoutConfig(
 
     fun constructName(server: Server): String {
         return serverName
-            .replace("%group%", server.group)
-            .replace("%numerical-id%", server.numericalId.toString())
+            .replace("<group_name>", server.group)
+            .replace("<numerical_id>", server.numericalId.toString())
     }
 
 }

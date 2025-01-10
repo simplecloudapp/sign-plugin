@@ -1,5 +1,6 @@
 name: 'starting'
 rule: 'state_starting'
+priority: 4
 frame-update-interval: 500
 
 frames:

@@ -3,6 +3,6 @@ inherit: 'state_available'
 
 matcher:
   MATCH_ALL:
-    - key: '<server_property:maintenance>'
-      value: 'true'
+    - key: '<server_property:joinstate>'
+      value: 'maintenance'
       operation: EQUALS
