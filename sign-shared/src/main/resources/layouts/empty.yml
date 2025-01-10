@@ -1,12 +1,6 @@
-name: 'empty_default'
-rule: 'available'
+name: 'empty'
+rule: 'empty'
 frame-update-interval: 1000
-
-matcher:
-  MATCH_ALL:
-    - key: '<server_online_players>'
-      value: '0'
-      operation: EQUALS
 
 frames:
   - lines:

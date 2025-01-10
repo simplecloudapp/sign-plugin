@@ -2,11 +2,16 @@ package app.simplecloud.plugin.sign.shared
 
 object SignManagerProvider {
 
-    private lateinit var signManager: SignManager<*>
+    private var signManager: SignManager<*>? = null
 
-    fun register(signManager: SignManager<*>) {
+    @Synchronized
+    fun initialize(signManager: SignManager<*>) {
+        if (this.signManager != null) {
+            throw IllegalStateException("SignManager is already initialize")
+        }
         this.signManager = signManager
     }
 
     fun get(): SignManager<*> = signManager
+        ?: throw IllegalStateException("SignManager has not been initialize")
 }

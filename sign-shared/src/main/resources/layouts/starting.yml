@@ -1,17 +1,20 @@
-name: 'offline_default'
-rule: 'OFFLINE'
+name: 'starting'
+rule: 'state_starting'
 frame-update-interval: 500
 
 frames:
   - lines:
       - '<color:#38bdf8><bold>⚡</bold></color>'
-      - 'Offline'
+      - 'Starting'
       - '<color:#38bdf8>O</color>oo'
+      - '<group>-<numerical-id>'
   - lines:
       - '<color:#38bdf8><bold>⚡</bold></color>'
-      - 'Offline'
+      - 'Starting'
       - 'o<color:#38bdf8>O</color>o'
+      - '<group>-<numerical-id>'
   - lines:
       - '<color:#38bdf8><bold>⚡</bold></color>'
-      - 'Offline'
+      - 'Starting'
       - 'oo<color:#38bdf8>O</color>'
+      - '<group>-<numerical-id>'

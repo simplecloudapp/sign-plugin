@@ -50,7 +50,7 @@ class SignManager<T : Any>(
     val serverPlaceholderProvider: ServerPlaceholderProvider = ServerPlaceholderProvider()
 
     init {
-        SignManagerProvider.register(this)
+        SignManagerProvider.initialize(this)
     }
 
     fun start() {
@@ -119,10 +119,7 @@ class SignManager<T : Any>(
     override fun unmap(location: T): SignLocationConfig = locationMapper.unmap(location)
 
     fun getLayout(ruleContext: RuleContext): LayoutConfig {
-        return layoutRepository.getAll().firstOrNull {
-            MatcherUtil.matches(it.matcher, ruleContext) &&
-                    MatcherUtil.matches(it.rule.matcher, ruleContext)
-        }
+        return layoutRepository.getAll().sortedByDescending { it.priority }.firstOrNull { it.matches(ruleContext) }
             ?: LayoutConfig()
     }
 
@@ -165,7 +162,7 @@ class SignManager<T : Any>(
             }
             .filter { server ->
                 val ruleContext = ServerRuleContext(server)
-                ruleRepository.getAll().any { rule -> MatcherUtil.matches(rule.matcher, ruleContext) }
+                ruleRepository.getAll().any { rule -> MatcherUtil.matches(rule, ruleContext) }
             }
             .sortedBy { it.numericalId }
             .iterator()

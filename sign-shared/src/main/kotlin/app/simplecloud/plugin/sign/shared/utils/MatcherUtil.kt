@@ -1,6 +1,7 @@
 package app.simplecloud.plugin.sign.shared.utils
 
 import app.simplecloud.plugin.sign.shared.SignManagerProvider
+import app.simplecloud.plugin.sign.shared.config.rule.RuleConfig
 import app.simplecloud.plugin.sign.shared.matcher.MatcherConfigEntry
 import app.simplecloud.plugin.sign.shared.matcher.MatcherType
 import app.simplecloud.plugin.sign.shared.rule.context.RuleContext
@@ -12,14 +13,9 @@ object MatcherUtil {
 
     private val miniMessage = MiniMessage.miniMessage()
 
-    fun matches(matcher: Map<MatcherType, List<MatcherConfigEntry>>, ruleContext: RuleContext): Boolean {
+    fun matches(rule: RuleConfig, ruleContext: RuleContext): Boolean {
         return runBlocking {
-            val ruleMatches = matcher.all { (type, entries) ->
-                evaluateMatcher(type, entries, ruleContext)
-            }
-            if (!ruleMatches) return@runBlocking false
-
-            matcher.all { (type, entries) ->
+            rule.matcher.all { (type, entries) ->
                 evaluateMatcher(type, entries, ruleContext)
             }
         }

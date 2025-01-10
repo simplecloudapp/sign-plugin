@@ -1,0 +1,8 @@
+name: 'empty'
+inherit: 'state_available'
+
+matcher:
+  MATCH_ALL:
+    - key: '<server_online_players>'
+      value: '0'
+      operation: EQUALS
