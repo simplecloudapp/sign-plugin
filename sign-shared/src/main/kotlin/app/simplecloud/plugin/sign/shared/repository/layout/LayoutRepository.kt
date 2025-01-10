@@ -1,10 +1,9 @@
 package app.simplecloud.plugin.sign.shared.repository.layout
 
+import app.simplecloud.plugin.api.shared.repository.ResourcedYamlDirectoryRepository
 import app.simplecloud.plugin.sign.shared.config.layout.LayoutConfig
-import app.simplecloud.plugin.sign.shared.repository.ResourcedYamlDirectoryRepository
 import java.nio.file.Path
 
-@Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
 class LayoutRepository(
     directory: Path
 ) : ResourcedYamlDirectoryRepository<String, LayoutConfig>(directory, LayoutConfig::class.java) {
@@ -13,11 +12,11 @@ class LayoutRepository(
         save(getFileName(element.name), element)
     }
 
-    override fun getFileName(name: String): String {
-        return "$name.yml"
+    override fun getFileName(identifier: String): String {
+        return "$identifier.yml"
     }
 
-    override fun find(name: String): LayoutConfig? {
-        return getAll().find { it.name == name }
+    override fun find(identifier: String): LayoutConfig? {
+        return getAll().find { it.name == identifier }
     }
 }

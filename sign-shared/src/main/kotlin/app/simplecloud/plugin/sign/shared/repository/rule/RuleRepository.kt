@@ -1,7 +1,7 @@
 package app.simplecloud.plugin.sign.shared.repository.rule
 
+import app.simplecloud.plugin.api.shared.repository.ResourcedYamlDirectoryRepository
 import app.simplecloud.plugin.sign.shared.config.rule.RuleConfig
-import app.simplecloud.plugin.sign.shared.repository.ResourcedYamlDirectoryRepository
 import java.nio.file.Path
 
 class RuleRepository(
