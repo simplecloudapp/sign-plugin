@@ -6,6 +6,6 @@ frame-update-interval: 1000
 frames:
   - lines:
       - '<color:#aa903a>🚧</color>'
-      - '<group>-<numerical-id>'
+      - '<group_name>-<server_numerical_id>'
       - '<color:#aa903a><b>MAINTENANCE</b></color>'
       - '<color:#aa903a>🚧</color>'

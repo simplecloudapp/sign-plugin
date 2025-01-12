@@ -5,11 +5,11 @@ frame-update-interval: 1000
 frames:
   - lines:
       - '<color:#4ade80>✨</color>'
-      - '<group>-<numerical-id>'
+      - '<group_name>-<server_numerical_id>'
       - '<color:#4ade80><b>EMPTY</b></color>'
-      - '<player-count>/<max-players>'
+      - '<server_online_players>/<server_max_players>'
   - lines:
       - '<color:#4ade80>✨</color>'
-      - '<group>-<numerical-id>'
+      - '<group_name>-<server_numerical_id>'
       - '<color:#4ade80><b>JOIN NOW!</b></color>'
-      - '<player-count>/<max-players>'
+      - '<server_online_players>/<server_max_players>'

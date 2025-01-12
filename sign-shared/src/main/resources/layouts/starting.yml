@@ -8,14 +8,14 @@ frames:
       - '<color:#38bdf8><bold>⚡</bold></color>'
       - 'Starting'
       - '<color:#38bdf8>O</color>oo'
-      - '<group>-<numerical-id>'
+      - '<group_name>-<server_numerical_id>'
   - lines:
       - '<color:#38bdf8><bold>⚡</bold></color>'
       - 'Starting'
       - 'o<color:#38bdf8>O</color>o'
-      - '<group>-<numerical-id>'
+      - '<group_name>-<server_numerical_id>'
   - lines:
       - '<color:#38bdf8><bold>⚡</bold></color>'
       - 'Starting'
       - 'oo<color:#38bdf8>O</color>'
-      - '<group>-<numerical-id>'
+      - '<group_name>-<server_numerical_id>'

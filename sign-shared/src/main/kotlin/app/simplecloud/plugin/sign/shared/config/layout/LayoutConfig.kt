@@ -3,7 +3,7 @@ package app.simplecloud.plugin.sign.shared.config.layout
 import app.simplecloud.controller.shared.server.Server
 import app.simplecloud.plugin.sign.shared.SignManagerProvider
 import app.simplecloud.plugin.sign.shared.config.rule.RuleConfig
-import app.simplecloud.plugin.sign.shared.rule.context.RuleContext
+import app.simplecloud.plugin.sign.shared.rule.RuleContext
 import app.simplecloud.plugin.sign.shared.utils.MatcherUtil
 import kotlinx.coroutines.runBlocking
 import org.spongepowered.configurate.objectmapping.ConfigSerializable

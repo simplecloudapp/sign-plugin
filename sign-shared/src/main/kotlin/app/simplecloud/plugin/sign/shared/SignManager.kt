@@ -12,8 +12,8 @@ import app.simplecloud.plugin.sign.shared.config.rule.RuleConfig
 import app.simplecloud.plugin.sign.shared.repository.layout.LayoutRepository
 import app.simplecloud.plugin.sign.shared.repository.location.LocationsRepository
 import app.simplecloud.plugin.sign.shared.repository.rule.RuleRepository
-import app.simplecloud.plugin.sign.shared.rule.context.RuleContext
-import app.simplecloud.plugin.sign.shared.rule.context.impl.ServerRuleContext
+import app.simplecloud.plugin.sign.shared.rule.RuleContext
+import app.simplecloud.plugin.sign.shared.rule.impl.ServerRuleContext
 import app.simplecloud.plugin.sign.shared.service.SignService
 import app.simplecloud.plugin.sign.shared.utils.MatcherUtil
 import kotlinx.coroutines.*

@@ -1,11 +1,12 @@
 package app.simplecloud.plugin.sign.shared.utils
 
+import app.simplecloud.controller.shared.server.Server
 import app.simplecloud.plugin.sign.shared.SignManagerProvider
 import app.simplecloud.plugin.sign.shared.config.rule.RuleConfig
 import app.simplecloud.plugin.sign.shared.matcher.MatcherConfigEntry
 import app.simplecloud.plugin.sign.shared.matcher.MatcherType
-import app.simplecloud.plugin.sign.shared.rule.context.RuleContext
-import app.simplecloud.plugin.sign.shared.rule.context.impl.ServerRuleContext
+import app.simplecloud.plugin.sign.shared.rule.RuleContext
+import app.simplecloud.plugin.sign.shared.rule.impl.ServerRuleContext
 import kotlinx.coroutines.runBlocking
 import net.kyori.adventure.text.minimessage.MiniMessage
 
@@ -91,4 +92,16 @@ object MatcherUtil {
         }
     }
 
+    fun resolveAllPlaceholders(line: String, server: Server?): String {
+        val pattern = "<(server_|group_|env_)([^>]+)>".toRegex()
+        val ruleContext = ServerRuleContext(server)
+
+        return runBlocking {
+            pattern.findAll(line).fold(line) { currentLine, matchResult ->
+                val placeholder = matchResult.value
+                val resolvedValue = resolvePlaceholder(placeholder, ruleContext)
+                currentLine.replace(placeholder, resolvedValue)
+            }
+        }
+    }
 }
