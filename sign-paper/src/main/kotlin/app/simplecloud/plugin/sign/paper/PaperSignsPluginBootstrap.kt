@@ -126,8 +126,16 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
 
         frameConfig.lines.forEachIndexed { index, line ->
             val resolvedLine = miniMessage.deserialize(MatcherUtil.resolveAllPlaceholders(line, cloudSign.server))
-            sign.getSide(Side.FRONT).line(index, resolvedLine)
-            sign.getSide(Side.BACK).line(index, resolvedLine)
+            when (frameConfig.sides) {
+                "FRONT" -> sign.getSide(Side.FRONT).line(index, resolvedLine)
+                "BACK" -> sign.getSide(Side.BACK).line(index, resolvedLine)
+                "BOTH" -> {
+                    sign.getSide(Side.FRONT).line(index, resolvedLine)
+                    sign.getSide(Side.BACK).line(index, resolvedLine)
+                }
+
+                else -> sign.getSide(Side.FRONT).line(index, resolvedLine)
+            }
         }
 
         sign.update()

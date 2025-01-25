@@ -3,15 +3,18 @@ rule: 'state_offline'
 frame-update-interval: 500
 
 frames:
-  - lines:
+  - sides: "BOTH"
+    lines:
       - '<color:#38bdf8><bold>⚡</bold></color>'
       - 'Offline'
       - '<color:#38bdf8>O</color>oo'
-  - lines:
+  - sides: "BOTH"
+    lines:
       - '<color:#38bdf8><bold>⚡</bold></color>'
       - 'Offline'
       - 'o<color:#38bdf8>O</color>o'
-  - lines:
+  - sides: "BOTH"
+    lines:
       - '<color:#38bdf8><bold>⚡</bold></color>'
       - 'Offline'
       - 'oo<color:#38bdf8>O</color>'

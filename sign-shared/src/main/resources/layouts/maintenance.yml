@@ -4,7 +4,8 @@ priority: 5
 frame-update-interval: 1000
 
 frames:
-  - lines:
+  - sides: "BOTH"
+    lines:
       - '<color:#aa903a>🚧</color>'
       - '<group_name>-<server_numerical_id>'
       - '<color:#aa903a><b>MAINTENANCE</b></color>'
