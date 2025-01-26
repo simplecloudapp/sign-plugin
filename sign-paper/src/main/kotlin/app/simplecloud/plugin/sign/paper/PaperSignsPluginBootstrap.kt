@@ -129,6 +129,7 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
             when (frameConfig.sides.uppercase()) {
                 "FRONT" -> sign.getSide(Side.FRONT).line(index, resolvedLine)
                 "BACK" -> sign.getSide(Side.BACK).line(index, resolvedLine)
+
                 "BOTH" -> {
                     sign.getSide(Side.FRONT).line(index, resolvedLine)
                     sign.getSide(Side.BACK).line(index, resolvedLine)
