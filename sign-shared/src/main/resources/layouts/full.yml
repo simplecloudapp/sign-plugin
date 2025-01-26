@@ -1,10 +1,11 @@
-name: 'full_default'
-rule: 'FULL'
-priority: 8
+name: 'full'
+rule: 'full'
+priority: 3
 frame-update-interval: 1250
 
 frames:
-  - lines:
+  - sides: "BOTH"
+    lines:
       - '<color:#ff4747>⛔</color>'
       - '<group>-<numerical-id>'
       - '<color:#ff4747><b>FULL</b></color>'

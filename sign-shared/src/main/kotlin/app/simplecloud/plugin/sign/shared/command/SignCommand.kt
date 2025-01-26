@@ -1,6 +1,6 @@
 package app.simplecloud.plugin.sign.shared.command
 
-import app.simplecloud.plugin.sign.shared.config.location.SignLocation
+import app.simplecloud.plugin.sign.shared.config.location.SignLocationConfig
 import app.simplecloud.plugin.sign.shared.dispatcher.PlatformDispatcher
 import app.simplecloud.plugin.sign.shared.sender.SignCommandSender
 import app.simplecloud.plugin.sign.shared.service.SignService
@@ -198,7 +198,7 @@ class SignCommand<C : SignCommandSender, T>(
 
     private fun sendAllSignsInformation(
         sender: SignCommandSender,
-        groupedLocations: List<Pair<String, SignLocation>>,
+        groupedLocations: List<Pair<String, SignLocationConfig>>,
         page: Int
     ) {
         val totalPages = ceil(groupedLocations.size.toDouble() / LOCATIONS_PER_PAGE).toInt()
@@ -251,7 +251,7 @@ $navigationButtons
     private fun sendSignGroupInformation(
         sender: SignCommandSender,
         group: String,
-        locations: List<SignLocation>,
+        locations: List<SignLocationConfig>,
         page: Int
     ) {
         val totalPages = ceil(locations.size.toDouble() / LOCATIONS_PER_PAGE).toInt()
@@ -452,7 +452,7 @@ $navigationButtons
     private suspend fun getSignLocation(
         sender: SignCommandSender,
         operation: SignOperation = SignOperation.ADD
-    ): SignLocation? =
+    ): SignLocationConfig? =
         sender.getTargetBlock(MAX_SIGN_DISTANCE)?.let { location ->
             val hasExistingSign = signService.getCloudSign(signService.map(location)) != null
             when (operation) {

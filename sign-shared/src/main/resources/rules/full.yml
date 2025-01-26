@@ -1,0 +1,8 @@
+name: 'full'
+inherit: 'state_available'
+
+matcher:
+  MATCH_ALL:
+    - key: '<server_online_players>'
+      value: '<server_max_players>'
+      operation: EQUALS

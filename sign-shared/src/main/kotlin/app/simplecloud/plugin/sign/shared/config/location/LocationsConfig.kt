@@ -5,5 +5,5 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable
 @ConfigSerializable
 data class LocationsConfig(
     val group: String = "",
-    val locations: List<SignLocation> = emptyList()
+    val locations: List<SignLocationConfig> = emptyList()
 )

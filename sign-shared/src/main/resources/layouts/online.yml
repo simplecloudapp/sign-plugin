@@ -1,0 +1,11 @@
+name: 'online'
+rule: 'state_available'
+frame-update-interval: 1250
+
+frames:
+  - sides: "BOTH"
+    lines:
+      - '<color:#22c55e>⚡</color>'
+      - '<group_name>-<server_numerical_id>'
+      - '<server_online_players>/<server_max_players>'
+      - '<color:#22c55e><b>ONLINE</b></color>'

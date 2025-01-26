@@ -1,21 +1,24 @@
-name: 'starting_default'
-rule: 'STARTING'
-priority: 6
+name: 'starting'
+rule: 'state_starting'
+priority: 4
 frame-update-interval: 500
 
 frames:
-  - lines:
+  - sides: "BOTH"
+    lines:
       - '<color:#38bdf8><bold>⚡</bold></color>'
       - 'Starting'
       - '<color:#38bdf8>O</color>oo'
-      - '<group>-<numerical-id>'
-  - lines:
+      - '<group_name>-<server_numerical_id>'
+  - sides: "BOTH"
+    lines:
       - '<color:#38bdf8><bold>⚡</bold></color>'
       - 'Starting'
       - 'o<color:#38bdf8>O</color>o'
-      - '<group>-<numerical-id>'
-  - lines:
+      - '<group_name>-<server_numerical_id>'
+  - sides: "BOTH"
+    lines:
       - '<color:#38bdf8><bold>⚡</bold></color>'
       - 'Starting'
       - 'oo<color:#38bdf8>O</color>'
-      - '<group>-<numerical-id>'
+      - '<group_name>-<server_numerical_id>'

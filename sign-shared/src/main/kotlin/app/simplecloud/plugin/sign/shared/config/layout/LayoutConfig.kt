@@ -1,43 +1,45 @@
 package app.simplecloud.plugin.sign.shared.config.layout
 
 import app.simplecloud.controller.shared.server.Server
-import app.simplecloud.plugin.sign.shared.SignManager
-import app.simplecloud.plugin.sign.shared.config.matcher.MatcherConfigEntry
-import app.simplecloud.plugin.sign.shared.config.matcher.MatcherType
-import app.simplecloud.plugin.sign.shared.rule.RuleRegistry
-import app.simplecloud.plugin.sign.shared.rule.SignRule
+import app.simplecloud.plugin.sign.shared.SignManagerProvider
+import app.simplecloud.plugin.sign.shared.config.rule.RuleConfig
+import app.simplecloud.plugin.sign.shared.rule.RuleContext
+import app.simplecloud.plugin.sign.shared.utils.MatcherUtil
+import kotlinx.coroutines.runBlocking
 import org.spongepowered.configurate.objectmapping.ConfigSerializable
 import org.spongepowered.configurate.objectmapping.meta.Setting
-import org.spongepowered.configurate.serialize.SerializationException
 
 @ConfigSerializable
 data class LayoutConfig(
     val name: String = "",
-    val matcher: Map<MatcherType, List<MatcherConfigEntry>> = emptyMap(),
     @Setting("rule")
-    val ruleName: String = "EMPTY",
+    val ruleName: String = "",
     val priority: Int = 0,
-    val serverName: String = "%group%-%numerical-id%",
+    val serverName: String = "<group_name>-<numerical_id>",
     val frameUpdateInterval: Long = 500,
     val frames: List<FrameConfig> = listOf(),
 ) {
 
-    val rule: SignRule
-        get() = SignManager.getRuleRegistry()?.getRule(ruleName)
-            ?: throw SerializationException("Rule $ruleName not found")
+    val rule: RuleConfig
+        get() = SignManagerProvider.get().getRule(ruleName)
+            ?: RuleConfig(name = "UNKNOWN_RULE")
 
-    companion object {
-        private var ruleRegistry: RuleRegistry? = null
+    fun matches(ruleContext: RuleContext): Boolean {
+        return runBlocking {
+            rule.inherit?.let { inheritRuleName ->
+                SignManagerProvider.get().getRule(inheritRuleName)?.let { inheritRule ->
+                    MatcherUtil.matches(inheritRule, ruleContext)
+                }
+            }
 
-        fun setRegistry(registry: RuleRegistry) {
-            ruleRegistry = registry
+            MatcherUtil.matches(rule, ruleContext)
         }
     }
 
     fun constructName(server: Server): String {
         return serverName
-            .replace("%group%", server.group)
-            .replace("%numerical-id%", server.numericalId.toString())
+            .replace("<group_name>", server.group)
+            .replace("<numerical_id>", server.numericalId.toString())
     }
 
 }

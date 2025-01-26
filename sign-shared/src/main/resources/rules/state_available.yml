@@ -1,0 +1,7 @@
+name: 'state_available'
+
+matcher:
+  MATCH_ALL:
+    - key: '<server_state>'
+      value: 'AVAILABLE'
+      operation: EQUALS

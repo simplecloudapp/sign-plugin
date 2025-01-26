@@ -2,7 +2,7 @@ package app.simplecloud.plugin.sign.paper
 
 import app.simplecloud.plugin.sign.paper.dispatcher.PaperPlatformDispatcher
 import app.simplecloud.plugin.sign.shared.command.SignStateManager
-import app.simplecloud.plugin.sign.shared.config.location.SignLocation
+import app.simplecloud.plugin.sign.shared.config.location.SignLocationConfig
 import kotlinx.coroutines.withContext
 import net.kyori.adventure.text.Component
 import org.bukkit.Location
@@ -32,7 +32,7 @@ class PaperSignStateManager(
         }
     }
 
-    override suspend fun updateSign(location: SignLocation, lines: List<Component>) {
+    override suspend fun updateSign(location: SignLocationConfig, lines: List<Component>) {
         withContext(dispatcher.getDispatcher()) {
             val mappedLocation = bootstrap.signManager.map(location)
 

@@ -1,7 +1,7 @@
 package app.simplecloud.plugin.sign.paper.sender
 
 import app.simplecloud.plugin.sign.paper.PaperSignsPlugin
-import app.simplecloud.plugin.sign.shared.config.location.SignLocation
+import app.simplecloud.plugin.sign.shared.config.location.SignLocationConfig
 import app.simplecloud.plugin.sign.shared.sender.SignCommandSender
 import app.simplecloud.plugin.sign.shared.utils.SignCommandMessages
 import io.papermc.paper.command.brigadier.CommandSourceStack
@@ -20,7 +20,7 @@ class PaperCommandSender(
     override fun sendMessage(component: Component) =
         sourceStack.sender.sendMessage(component)
 
-    override suspend fun getTargetBlock(maxDistance: Int): SignLocation? {
+    override suspend fun getTargetBlock(maxDistance: Int): SignLocationConfig? {
         val player = sourceStack.sender as? Player ?: return null
 
         return withContext(PaperSignsPlugin.instance.bootstrap.platformDispatcher.getDispatcher()) {
@@ -32,7 +32,7 @@ class PaperCommandSender(
                 return@withContext null
             }
 
-            SignLocation(
+            SignLocationConfig(
                 world = targetBlock.world.name,
                 x = targetBlock.x.toDouble(),
                 y = targetBlock.y.toDouble(),

@@ -85,8 +85,4 @@ data class SignState<T : Any>(
             }
         }
 
-
-    companion object {
-        const val DEFAULT_FRAME_INDEX = 0
-    }
 }

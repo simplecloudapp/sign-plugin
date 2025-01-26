@@ -4,6 +4,7 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable
 
 @ConfigSerializable
 data class FrameConfig(
+    val sides: String = "FRONT",
     val lines: Array<String> = emptyArray(),
 ) {
 
