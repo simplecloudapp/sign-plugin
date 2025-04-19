@@ -12,14 +12,15 @@ dependencies {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.jetbrains.kotlinx")
     }
-    compileOnly(rootProject.libs.bundles.coroutine)
-    compileOnly(rootProject.libs.simplecloud.controller.api)
+    implementation(rootProject.libs.bundles.coroutine)
+    implementation(rootProject.libs.simplecloud.controller.api)
 }
 
 tasks {
     shadowJar {
         exclude("kotlin")
         exclude("kotlinx")
+        relocate("app.simplecloud.controller", "app.simplecloud.signs.plugin.relocate.controller")
         mergeServiceFiles()
     }
 }
@@ -43,7 +44,7 @@ modrinth {
         "1.21.2",
         "1.21.3",
         "1.21.4",
-	"1.21.5"
+        "1.21.5"
     )
     loaders.add("paper")
     changelog.set("https://docs.simplecloud.app/changelog")
