@@ -47,6 +47,7 @@ modrinth {
         "1.21.5"
     )
     loaders.add("paper")
+    loaders.add("purpur")
     changelog.set("https://docs.simplecloud.app/changelog")
     syncBodyFrom.set(rootProject.file("README.md").readText())
 }
