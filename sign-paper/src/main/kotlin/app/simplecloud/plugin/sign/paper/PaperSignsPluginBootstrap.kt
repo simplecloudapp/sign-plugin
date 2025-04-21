@@ -158,7 +158,7 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
             add(Placeholder.parsed("player-count", this?.playerCount?.toString() ?: "0"))
             add(Placeholder.parsed("state", this?.state?.toString() ?: "unknown"))
             add(
-                TagResolver.resolver("properties") {arguments, context ->
+                TagResolver.resolver("property") {arguments, context ->
                     val argumentName = arguments.popOr("property expected").value()
                     val defaultArgument = arguments.peek()?.value() ?: ""
                     val string = this?.properties?.get(argumentName) ?: defaultArgument
