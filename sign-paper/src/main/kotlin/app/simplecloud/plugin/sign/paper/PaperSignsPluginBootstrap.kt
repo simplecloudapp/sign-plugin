@@ -18,6 +18,7 @@ import io.papermc.paper.plugin.bootstrap.PluginProviderContext
 import kotlinx.coroutines.runBlocking
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
+import net.kyori.adventure.text.minimessage.tag.Tag
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import org.bukkit.Location
@@ -143,7 +144,7 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
         sign.getSide(Side.BACK).lines().replaceAll { emptyComponent }
     }
 
-    private fun getPlaceholders(cloudSign: CloudSign<*>, context: RuleContext): List<TagResolver.Single> = buildList {
+    private fun getPlaceholders(cloudSign: CloudSign<*>, context: RuleContext): List<TagResolver> = buildList {
         with(cloudSign.server) {
             add(Placeholder.parsed("group", this?.group ?: "unknown"))
             add(Placeholder.parsed("numerical-id", this?.numericalId?.toString() ?: "0"))
@@ -156,6 +157,14 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
             add(Placeholder.parsed("max-players", this?.maxPlayers?.toString() ?: "0"))
             add(Placeholder.parsed("player-count", this?.playerCount?.toString() ?: "0"))
             add(Placeholder.parsed("state", this?.state?.toString() ?: "unknown"))
+            add(
+                TagResolver.resolver("properties") {arguments, context ->
+                    val argumentName = arguments.popOr("property expected").value()
+                    val defaultArgument = arguments.peek()?.value() ?: ""
+                    val string = this?.properties?.get(argumentName) ?: defaultArgument
+                    Tag.preProcessParsed(string)
+                }
+            )
         }
 
         if (context is PlayerRuleContext) {
@@ -163,4 +172,5 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
             add(Placeholder.parsed("player_sender", context.player.server.name))
         }
     }
+
 }
