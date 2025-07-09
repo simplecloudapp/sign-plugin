@@ -5,7 +5,7 @@ simplecloud-controller = "0.0.30-dev.16f91aa"
 paper = "1.21.4-R0.1-SNAPSHOT"
 
 cloud-core = "2.0.0"
-cloud-commands = "2.0.0-beta.10"
+cloud-commands = "2.0.0-SNAPSHOT"
 cloud-confirmation-processors = "1.0.0-rc.1"
 coroutine = "1.10.1"
 
