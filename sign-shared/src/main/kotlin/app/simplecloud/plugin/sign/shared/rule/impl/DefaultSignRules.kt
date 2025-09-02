@@ -7,7 +7,7 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable
 
 @ConfigSerializable
 enum class DefaultSignRules(
-    override val serverState: ServerState?, override val checker: RuleChecker
+    override val serverState: ServerState?, override val checker: RuleChecker,
 ) : SignRule {
 
     STARTING(
@@ -27,7 +27,10 @@ enum class DefaultSignRules(
     MAINTENANCE(
         ServerState.AVAILABLE, object : RuleChecker {
             override fun check(context: RuleContext): Boolean {
-                return context.server?.properties?.getOrDefault("maintenance", false) == true
+                return context.server?.properties?.getOrDefault("maintenance", "false")
+                    .toString()
+                    .toBoolean() ||
+                        context.server?.properties?.get("joinstate")?.toString() == "maintenance"
             }
         }),
 
