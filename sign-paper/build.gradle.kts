@@ -13,7 +13,7 @@ dependencies {
         exclude(group = "org.jetbrains.kotlinx")
     }
     implementation(rootProject.libs.bundles.coroutine)
-    implementation(rootProject.libs.simplecloud.controller.api)
+    api(libs.simplecloud.api)
 }
 
 tasks {

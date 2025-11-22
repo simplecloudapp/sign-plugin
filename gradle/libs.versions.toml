@@ -1,7 +1,7 @@
 [versions]
 kotlin = "2.1.0"
 shadow = "9.0.0-beta4"
-simplecloud-controller = "0.0.30-dev.16f91aa"
+simplecloud-api = "0.1.0-platform.1-dev.1763294516035-de96444"
 paper = "1.21.4-R0.1-SNAPSHOT"
 
 cloud-core = "2.0.0"
@@ -26,7 +26,7 @@ cloud-minecraft-extras = { module = "org.incendo:cloud-minecraft-extras", versio
 cloud-paper = { module = "org.incendo:cloud-paper", version.ref = "cloud-commands" }
 cloud-processors-confirmation = { module = "org.incendo:cloud-processors-confirmation", version.ref = "cloud-confirmation-processors" }
 
-simplecloud-controller-api = { module = "app.simplecloud.controller:controller-api", version.ref = "simplecloud-controller" }
+simplecloud-api = { module = "app.simplecloud.api:api", version.ref = "simplecloud-api" }
 
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutine" }
 coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutine" }

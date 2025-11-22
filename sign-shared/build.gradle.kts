@@ -1,5 +1,5 @@
 dependencies {
-    compileOnly(rootProject.libs.simplecloud.controller.api)
+    api(libs.simplecloud.api)
     implementation(rootProject.libs.bundles.cloud.core)
     compileOnly(rootProject.libs.bundles.adventure)
 }
