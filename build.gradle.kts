@@ -58,14 +58,12 @@ subprojects {
 
         named("shadowJar", ShadowJar::class) {
             mergeServiceFiles()
-            relocate("com.google.protobuf", "app.simplecloud.relocate.google.protobuf")
-            relocate("com.google.common", "app.simplecloud.relocate.google.common")
-            relocate("io.grpc", "app.simplecloud.relocate.io.grpc")
 
-
+            // Only relocate packages that are actually included in the shadow jar
             relocate("org.incendo", "app.simplecloud.signs.plugin.relocate.incendo")
             relocate("org.spongepowered", "app.simplecloud.signs.plugin.relocate.spongepowered")
             relocate("app.simplecloud.plugin.api", "app.simplecloud.signs.plugin.relocate.plugin.api")
+
             archiveFileName.set("${project.name}.jar")
         }
 

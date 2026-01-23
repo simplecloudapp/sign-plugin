@@ -13,23 +13,24 @@ class LocationsRepository<T : Any>(
 ) : YamlDirectoryRepository<String, LocationsConfig>(directoryPath, LocationsConfig::class.java) {
 
     override fun save(element: LocationsConfig) {
-        save(getFileName(element.group), element)
+        val prefix = if (element.isPersistentServer()) "persistent-" else "group-"
+        save(getFileName(prefix + element.getIdentifier()), element)
     }
 
-    override fun getFileName(groupName: String): String {
-        return "$groupName.yml"
+    override fun getFileName(key: String): String {
+        return "$key.yml"
     }
 
-    override fun find(groupName: String): LocationsConfig? {
-        return entities.values.find { it.group == groupName }
+    override fun find(key: String): LocationsConfig? {
+        return entities.values.find { it.getIdentifier() == key }
     }
 
     private fun findByLocation(location: T): LocationsConfig? {
         return entities.values.find { it -> it.locations.any { it == locationMapper.unmap(location) } }
     }
 
-    fun saveLocation(group: String, location: T) {
-        val config = find(group) ?: LocationsConfig(group)
+    fun saveLocationForGroup(group: String, location: T) {
+        val config = find(group) ?: LocationsConfig(group = group)
         val signLocation = locationMapper.unmap(location)
 
         save(
@@ -39,8 +40,20 @@ class LocationsRepository<T : Any>(
         )
     }
 
-    fun removeLocationGroup(group: String) {
-        Files.delete(directoryPath.resolve(getFileName(group)))
+    fun saveLocationForPersistentServer(persistentServerId: String, location: T) {
+        val key = "ps:$persistentServerId"
+        val config = find(key) ?: LocationsConfig(persistentServer = persistentServerId)
+        val signLocation = locationMapper.unmap(location)
+
+        save(
+            config.copy(
+                locations = config.locations + signLocation
+            )
+        )
+    }
+
+    fun removeLocationConfig(key: String) {
+        Files.delete(directoryPath.resolve(getFileName(key)))
     }
 
     fun removeLocation(location: T) {

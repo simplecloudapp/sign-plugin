@@ -2,6 +2,7 @@ package app.simplecloud.plugin.sign.shared.service
 
 import app.simplecloud.api.CloudApi
 import app.simplecloud.plugin.sign.shared.CloudSign
+import app.simplecloud.plugin.sign.shared.config.location.LocationsConfig
 import app.simplecloud.plugin.sign.shared.config.location.SignLocation
 
 interface SignService<T> {
@@ -11,19 +12,19 @@ interface SignService<T> {
 
     fun getAllLocations(): List<SignLocation>
 
-    fun getAllGroupsRegistered(): List<String>
+    fun getAllConfigs(): List<LocationsConfig>
 
-    fun getLocationsByGroup(group: String): List<SignLocation>?
+    fun getLocationsByKey(key: String): List<SignLocation>?
 
-    fun register(group: String, location: T)
+    fun registerForGroup(group: String, location: T)
+
+    fun registerForPersistentServer(persistentServerId: String, location: T)
 
     suspend fun removeCloudSign(location: T)
 
-    fun exists(group: String): Boolean
+    fun exists(key: String): Boolean
 
     fun map(location: SignLocation): T
 
     fun unmap(location: T): SignLocation
-
-
 }

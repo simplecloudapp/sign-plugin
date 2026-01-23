@@ -13,11 +13,12 @@ import org.spongepowered.configurate.serialize.SerializationException
 @ConfigSerializable
 data class LayoutConfig(
     val name: String = "",
+    val type: LayoutType = LayoutType.ALL,
     val matcher: Map<MatcherType, List<MatcherConfigEntry>> = emptyMap(),
     @Setting("rule")
     val ruleName: String = "EMPTY",
     val priority: Int = 0,
-    val serverName: String = "%group%-%numerical-id%",
+    val serverName: String = "%server-name%",
     val frameUpdateInterval: Long = 500,
     val frames: List<FrameConfig> = listOf(),
 ) {
@@ -35,9 +36,28 @@ data class LayoutConfig(
     }
 
     fun constructName(server: Server): String {
+        val baseName = when {
+            server.isFromGroup -> "${server.serverGroupId}-${server.numericalId}"
+            server.isFromPersistentServer -> server.persistentServerId ?: server.serverId
+            else -> server.serverId
+        }
         return serverName
-            .replace("%group%", server.group.name)
+            .replace("%server-name%", baseName)
+            .replace("%group%", server.serverGroupId ?: "")
             .replace("%numerical-id%", server.numericalId.toString())
+            .replace("%persistent-server%", server.persistentServerId ?: "")
+    }
+
+    /**
+     * Checks if this layout applies to the given server type.
+     */
+    fun appliesTo(server: Server?): Boolean {
+        if (server == null) return type == LayoutType.ALL
+        return when (type) {
+            LayoutType.ALL -> true
+            LayoutType.GROUP -> server.isFromGroup
+            LayoutType.PERSISTENT -> server.isFromPersistentServer
+        }
     }
 
 }

@@ -78,9 +78,14 @@ class SignManager<T : Any>(
         }
     }
 
-    override fun register(group: String, location: T) {
+    override fun registerForGroup(group: String, location: T) {
         logger.debug("Registering new location for group: {}", group)
-        locationsRepository.saveLocation(group, location)
+        locationsRepository.saveLocationForGroup(group, location)
+    }
+
+    override fun registerForPersistentServer(persistentServerId: String, location: T) {
+        logger.debug("Registering new location for persistent server: {}", persistentServerId)
+        locationsRepository.saveLocationForPersistentServer(persistentServerId, location)
     }
 
     override fun getCloudSign(location: T): CloudSign<T>? =
@@ -89,32 +94,31 @@ class SignManager<T : Any>(
     override fun getAllLocations(): List<SignLocation> =
         locationsRepository.getAll().flatMap { it.locations }
 
-    override fun getAllGroupsRegistered(): List<String> =
+    override fun getAllConfigs(): List<LocationsConfig> =
         locationsRepository.getAll()
-            .map { it.group }
-            .distinct()
 
-    override fun getLocationsByGroup(group: String): List<SignLocation>? =
-        locationsRepository.find(group)?.locations
+    override fun getLocationsByKey(key: String): List<SignLocation>? =
+        locationsRepository.find(key)?.locations
 
     override suspend fun removeCloudSign(location: T) {
         state.removeCloudSign(location)
         locationsRepository.removeLocation(location)
     }
 
-    override fun exists(group: String): Boolean =
-        locationsRepository.getAll().any { it.group == group }
+    override fun exists(key: String): Boolean =
+        locationsRepository.getAll().any { it.getIdentifier() == key }
 
     override fun map(location: SignLocation): T = locationMapper.map(location)
 
     override fun unmap(location: T): SignLocation = locationMapper.unmap(location)
 
     fun getLayout(context: RuleContext): LayoutConfig {
-        val serverName = "${context.server?.group}-${context.server?.numericalId}"
+        val serverName = getServerDisplayName(context.server)
 
         return layoutRepository.getAll()
             .asSequence()
             .sortedByDescending { it.priority }
+            .filter { layoutConfig -> layoutConfig.appliesTo(context.server) }
             .filter { layoutConfig ->
                 val rule = ruleRegistry.getRule(layoutConfig.rule.getRuleName())
                 rule?.checker?.check(context) == true
@@ -166,7 +170,7 @@ class SignManager<T : Any>(
 
     private suspend fun updateSigns() {
         locationsRepository.getAll().forEach { config ->
-            val servers = serverCache.getServersByGroup(config.group)
+            val servers = serverCache.getServers(config)
             updateSigns(config, servers)
         }
     }
@@ -180,11 +184,39 @@ class SignManager<T : Any>(
                 val context = RuleContext(server, server.state)
                 ruleRegistry.getRules().any { rule -> rule.checker.check(context) }
             }
-            .sortedBy { it.numericalId }
+            .sortedWith(serverComparator)
             .iterator()
 
         locationsConfig.locations.forEach { locationConfig ->
             processLocation(locationConfig, unusedServers, servers)
+        }
+    }
+
+    /**
+     * Comparator for sorting servers.
+     * Group-based servers are sorted by numerical ID.
+     * Persistent servers are sorted by server ID (string comparison).
+     */
+    private val serverComparator = Comparator<Server> { a, b ->
+        when {
+            a.isFromGroup && b.isFromGroup -> a.numericalId.compareTo(b.numericalId)
+            a.isFromPersistentServer && b.isFromPersistentServer -> a.serverId.compareTo(b.serverId)
+            a.isFromGroup -> -1 // Groups come before persistent servers
+            else -> 1
+        }
+    }
+
+    /**
+     * Gets the display name for a server.
+     * For group-based servers: "groupName-numericalId"
+     * For persistent servers: the persistent server ID
+     */
+    private fun getServerDisplayName(server: Server?): String {
+        if (server == null) return ""
+        return when {
+            server.isFromGroup -> "${server.serverGroupId}-${server.numericalId}"
+            server.isFromPersistentServer -> server.persistentServerId ?: server.serverId
+            else -> server.serverId
         }
     }
 

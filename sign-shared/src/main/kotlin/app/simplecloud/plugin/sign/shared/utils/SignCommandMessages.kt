@@ -8,6 +8,7 @@ object SignCommandMessages {
     const val SIGN_ALREADY_REGISTERED = "<red>This sign is already registered"
     const val SIGN_CREATE_SUCCESS = "<green>Successfully created sign for group <group>"
     const val GROUP_NOT_FOUND = "<red>The group <group> was not found"
+    const val PERSISTENT_SERVER_NOT_FOUND = "<red>The persistent server <group> was not found"
     const val SIGN_REMOVE_SUCCESS = "<green>Successfully removed sign"
     const val SIGN_REMOVE_GROUP_NOT_REGISTERED = "<red>No signs registered for group <group>"
     const val SIGN_REMOVE_GROUP_SUCCESS = "<green>Successfully removed <amount> signs of group <group>"
@@ -40,9 +41,10 @@ object SignCommandMessages {
         "   <color:#a3a3a3><hover:show_text:'<color:#38bdf8><bold>Add a Sign</bold></color>\n\n" +
                 "<color:#a3a3a3>Create a new server status sign by looking\n" +
                 "at any sign and running the command:</color>\n\n" +
-                "<color:#ffffff>/cloudsigns add <color:#4ade80><group></color></color>\n\n" +
+                "<color:#ffffff>/cloudsigns add group <color:#4ade80><group></color></color>\n" +
+                "<color:#ffffff>/cloudsigns add persistent <color:#4ade80><name></color></color>\n\n" +
                 "<color:#cbd5e1>The sign will automatically update with\n" +
-                "the current status of the specified group.</color>'><click:suggest_command:'/cloudsigns add '>/cloudsigns add <group</click></hover>"
+                "the current status of the specified server.</color>'><click:suggest_command:'/cloudsigns add '>/cloudsigns add <group|persistent> <name></click></hover>"
 
     const val HELP_REMOVE =
         "   <color:#a3a3a3><hover:show_text:'<color:#38bdf8><bold>Remove Signs</bold></color>\n\n" +

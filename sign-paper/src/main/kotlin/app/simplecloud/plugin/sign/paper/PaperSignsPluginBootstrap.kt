@@ -146,9 +146,24 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
 
     private fun getPlaceholders(cloudSign: CloudSign<*>, context: RuleContext): List<TagResolver> = buildList {
         with(cloudSign.server) {
-            add(Placeholder.parsed("group", this?.group?.name ?: "unknown"))
+            // Server name based on type
+            val serverName = when {
+                this == null -> "unknown"
+                this.isFromGroup -> "${this.group?.name}-${this.numericalId}"
+                this.isFromPersistentServer -> this.persistentServer?.name ?: this.serverId
+                else -> this.serverBase.name
+            }
+            add(Placeholder.parsed("server-name", serverName))
+
+            // Group-based server placeholders
+            add(Placeholder.parsed("group", this?.group?.name ?: ""))
             add(Placeholder.parsed("numerical-id", this?.numericalId?.toString() ?: "0"))
-            //add(Placeholder.parsed("type", this?.type?.toString() ?: "unknown"))
+
+            // Persistent server placeholders
+            add(Placeholder.parsed("persistent-server", this?.persistentServer?.name ?: ""))
+
+            // Common placeholders
+            add(Placeholder.parsed("server-id", this?.serverId ?: "unknown"))
             add(Placeholder.parsed("host", this?.serverhostId ?: "unknown"))
             add(Placeholder.parsed("ip", this?.ip ?: "unknown"))
             add(Placeholder.parsed("port", this?.port?.toString() ?: "0"))

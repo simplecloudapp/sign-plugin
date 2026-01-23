@@ -4,6 +4,7 @@ import app.simplecloud.api.CloudApi
 import app.simplecloud.plugin.sign.paper.PaperSignsPluginBootstrap
 import app.simplecloud.plugin.sign.shared.CloudSign
 import app.simplecloud.plugin.sign.shared.LocationMapper
+import app.simplecloud.plugin.sign.shared.config.location.LocationsConfig
 import app.simplecloud.plugin.sign.shared.config.location.SignLocation
 import app.simplecloud.plugin.sign.shared.service.SignService
 import org.bukkit.Location
@@ -20,20 +21,23 @@ class PaperSignService(private val bootstrap: PaperSignsPluginBootstrap) : SignS
     override fun getAllLocations(): List<SignLocation> =
         bootstrap.signManager.getAllLocations()
 
-    override fun getAllGroupsRegistered(): List<String> =
-        bootstrap.signManager.getAllGroupsRegistered()
+    override fun getAllConfigs(): List<LocationsConfig> =
+        bootstrap.signManager.getAllConfigs()
 
-    override fun getLocationsByGroup(group: String): List<SignLocation>? =
-        bootstrap.signManager.getLocationsByGroup(group)
+    override fun getLocationsByKey(key: String): List<SignLocation>? =
+        bootstrap.signManager.getLocationsByKey(key)
 
-    override fun register(group: String, location: Location) =
-        bootstrap.signManager.register(group, location)
+    override fun registerForGroup(group: String, location: Location) =
+        bootstrap.signManager.registerForGroup(group, location)
+
+    override fun registerForPersistentServer(persistentServerId: String, location: Location) =
+        bootstrap.signManager.registerForPersistentServer(persistentServerId, location)
 
     override suspend fun removeCloudSign(location: Location) =
         bootstrap.signManager.removeCloudSign(location)
 
-    override fun exists(group: String): Boolean =
-        bootstrap.signManager.exists(group)
+    override fun exists(key: String): Boolean =
+        bootstrap.signManager.exists(key)
 
     override fun map(location: SignLocation): Location =
         Location(

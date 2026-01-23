@@ -1,6 +1,7 @@
 package app.simplecloud.plugin.sign.shared.command
 
 import app.simplecloud.api.group.GroupServerType
+import app.simplecloud.plugin.sign.shared.config.location.LocationsConfig
 import app.simplecloud.plugin.sign.shared.config.location.SignLocation
 import app.simplecloud.plugin.sign.shared.dispatcher.PlatformDispatcher
 import app.simplecloud.plugin.sign.shared.sender.SignCommandSender
@@ -68,6 +69,7 @@ class SignCommand<C : SignCommandSender, T>(
                 createHelpCommand(baseCommand),
                 createListCommand(baseCommand),
                 createAddCommand(baseCommand),
+                createAddPersistentCommand(baseCommand),
                 createRemoveCommand(baseCommand),
                 createRemoveGroupCommand(baseCommand),
             ).forEach { command(it) }
@@ -108,11 +110,12 @@ class SignCommand<C : SignCommandSender, T>(
 
     private fun createAddCommand(baseCommand: Command.Builder<C>) =
         baseCommand.literal("add")
-            .commandDescription(Description.of("Register a new CloudSign"))
+            .literal("group")
+            .commandDescription(Description.of("Register a new CloudSign for a group"))
             .required(
                 "group",
                 StringParser.stringParser(),
-                Description.of("The name of the Target group"),
+                Description.of("The name of the target group"),
                 groupSuggestions()
             )
             .permission(SignCommandPermission.ADD.node)
@@ -123,7 +126,30 @@ class SignCommand<C : SignCommandSender, T>(
                         context.get("group"),
                         SignOperation.ADD
                     ) { location, group ->
-                        executeAddSign(location, group)
+                        executeAddGroupSign(location, group)
+                    }
+                }
+            }
+
+    private fun createAddPersistentCommand(baseCommand: Command.Builder<C>) =
+        baseCommand.literal("add")
+            .literal("persistent")
+            .commandDescription(Description.of("Register a new CloudSign for a persistent server"))
+            .required(
+                "persistentServer",
+                StringParser.stringParser(),
+                Description.of("The name of the target persistent server"),
+                persistentServerSuggestions()
+            )
+            .permission(SignCommandPermission.ADD.node)
+            .handler { context ->
+                commandScope.launch {
+                    handleSignOperation(
+                        context.sender(),
+                        context.get("persistentServer"),
+                        SignOperation.ADD
+                    ) { location, persistentServer ->
+                        executeAddPersistentSign(location, persistentServer)
                     }
                 }
             }
@@ -172,10 +198,10 @@ class SignCommand<C : SignCommandSender, T>(
     }
 
     private fun listAllSigns(sender: SignCommandSender, page: Int) {
-        val allSigns = signService.getAllGroupsRegistered()
-            .filter { group -> signService.getLocationsByGroup(group)?.isNotEmpty() == true }
+        val allConfigs = signService.getAllConfigs()
+            .filter { config -> config.locations.isNotEmpty() }
 
-        if (allSigns.isEmpty()) {
+        if (allConfigs.isEmpty()) {
             sendMessage(sender, SignCommandMessages.NO_SIGNS_REGISTERED)
             return
         }
@@ -187,13 +213,21 @@ class SignCommand<C : SignCommandSender, T>(
         sendMessage(sender, "<color:#38bdf8>✦ <bold>All Registered Signs</bold></color>")
         sendMessage(sender, "<color:#a8a8a8>════════════════════════</color>")
 
-        val allLocations = allSigns.flatMap { group ->
-            signService.getLocationsByGroup(group)?.map { location ->
-                group to location
-            } ?: emptyList()
+        val allLocations = allConfigs.flatMap { config ->
+            config.locations.map { location ->
+                getConfigDisplayName(config) to location
+            }
         }
 
         sendAllSignsInformation(sender, allLocations, page)
+    }
+
+    private fun getConfigDisplayName(config: LocationsConfig): String {
+        return when {
+            config.isGroup() -> config.group!!
+            config.isPersistentServer() -> "[PS] ${config.persistentServer}"
+            else -> "unknown"
+        }
     }
 
     private fun sendAllSignsInformation(
@@ -237,15 +271,15 @@ $navigationButtons
         )
     }
 
-    private fun listGroupSigns(sender: SignCommandSender, group: String, page: Int) {
-        val locations = signService.getLocationsByGroup(group)
+    private fun listGroupSigns(sender: SignCommandSender, key: String, page: Int) {
+        val locations = signService.getLocationsByKey(key)
         if (locations.isNullOrEmpty()) {
-            sendMessage(sender, SignCommandMessages.SIGN_REMOVE_GROUP_NOT_REGISTERED, "group" to group)
+            sendMessage(sender, SignCommandMessages.SIGN_REMOVE_GROUP_NOT_REGISTERED, "group" to key)
             return
         }
 
         sendMessage(sender, SignCommandMessages.LIST_HEADER)
-        sendSignGroupInformation(sender, group, locations, page)
+        sendSignGroupInformation(sender, key, locations, page)
     }
 
     private fun sendSignGroupInformation(
@@ -337,18 +371,38 @@ $navigationButtons
         }
     }
 
-    private suspend fun executeAddSign(location: T, group: String): CommandResult {
+    private suspend fun executeAddGroupSign(location: T, group: String): CommandResult {
         return runCatching {
             if (signService.getCloudSign(location) != null) {
                 return CommandResult.Error(SignCommandMessages.SIGN_ALREADY_REGISTERED)
             }
 
             signService.controllerApi.group().getGroupByName(group).await()
-            signService.register(group, location)
+            signService.registerForGroup(group, location)
             CommandResult.Success(mapOf("group" to group))
         }.getOrElse { e ->
             when (e) {
                 is RuntimeException -> CommandResult.Error(SignCommandMessages.GROUP_NOT_FOUND)
+                else -> {
+                    logger.error("Error registering sign", e)
+                    CommandResult.Error(SignCommandMessages.GENERAL_ERROR)
+                }
+            }
+        }
+    }
+
+    private suspend fun executeAddPersistentSign(location: T, persistentServer: String): CommandResult {
+        return runCatching {
+            if (signService.getCloudSign(location) != null) {
+                return CommandResult.Error(SignCommandMessages.SIGN_ALREADY_REGISTERED)
+            }
+
+            signService.controllerApi.persistentServer().getPersistentServerByName(persistentServer).await()
+            signService.registerForPersistentServer(persistentServer, location)
+            CommandResult.Success(mapOf("group" to persistentServer))
+        }.getOrElse { e ->
+            when (e) {
+                is RuntimeException -> CommandResult.Error(SignCommandMessages.PERSISTENT_SERVER_NOT_FOUND)
                 else -> {
                     logger.error("Error registering sign", e)
                     CommandResult.Error(SignCommandMessages.GENERAL_ERROR)
@@ -373,12 +427,12 @@ $navigationButtons
         }
     }
 
-    private suspend fun executeRemoveGroupSigns(group: String): CommandResult {
+    private suspend fun executeRemoveGroupSigns(key: String): CommandResult {
         return runCatching {
-            val locations = signService.getLocationsByGroup(group)
+            val locations = signService.getLocationsByKey(key)
                 ?.takeIf { it.isNotEmpty() }
                 ?: return CommandResult.Error(
-                    SignCommandMessages.SIGN_REMOVE_GROUP_NOT_REGISTERED.replace("<group>", group)
+                    SignCommandMessages.SIGN_REMOVE_GROUP_NOT_REGISTERED.replace("<group>", key)
                 )
 
             val amount = locations.size
@@ -471,8 +525,8 @@ $navigationButtons
 
     private fun registeredGroupSuggestions(): BlockingSuggestionProvider<C?> =
         BlockingSuggestionProvider { _, _ ->
-            signService.getAllGroupsRegistered()
-                .map { Suggestion.suggestion(it) }
+            signService.getAllConfigs()
+                .map { config -> Suggestion.suggestion(config.getIdentifier()) }
         }
 
     private fun groupSuggestions(): BlockingSuggestionProvider<C?> =
@@ -481,6 +535,15 @@ $navigationButtons
                 signService.controllerApi.group().allGroups
                     .await()
                     .filterNot { it.type == GroupServerType.PROXY }
+                    .map { Suggestion.suggestion(it.name) }
+            }
+        }
+
+    private fun persistentServerSuggestions(): BlockingSuggestionProvider<C?> =
+        BlockingSuggestionProvider { _, _ ->
+            runBlocking {
+                signService.controllerApi.persistentServer().getAllPersistentServers()
+                    .await()
                     .map { Suggestion.suggestion(it.name) }
             }
         }
