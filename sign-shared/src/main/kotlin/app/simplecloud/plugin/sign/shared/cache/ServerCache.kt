@@ -1,13 +1,14 @@
 package app.simplecloud.plugin.sign.shared.cache
 
-import app.simplecloud.controller.api.ControllerApi
-import app.simplecloud.controller.shared.server.Server
+import app.simplecloud.api.CloudApi
+import app.simplecloud.api.server.Server
 import app.simplecloud.plugin.sign.shared.repository.location.LocationsRepository
 import com.google.common.collect.Multimaps
 import kotlinx.coroutines.*
+import kotlinx.coroutines.future.await
 
 class ServerCache<T : Any>(
-    private val controllerApi: ControllerApi.Coroutine,
+    private val controllerApi: CloudApi,
     private val locationsRepository: LocationsRepository<T>
 ) {
 
@@ -40,7 +41,7 @@ class ServerCache<T : Any>(
             .map { it.group }
             .toSet()
             .forEach { group ->
-                val servers = controllerApi.getServers().getServersByGroup(group)
+                val servers = controllerApi.server().getServersByGroup(group).await()
                 serverCache.replaceValues(group, servers)
             }
     }

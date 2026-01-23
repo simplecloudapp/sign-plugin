@@ -1,8 +1,8 @@
 package app.simplecloud.plugin.sign.paper.rule
 
-import app.simplecloud.controller.shared.server.Server
+import app.simplecloud.api.server.Server
+import app.simplecloud.api.server.ServerState
 import app.simplecloud.plugin.sign.shared.rule.impl.RuleContext
-import build.buf.gen.simplecloud.controller.v1.ServerState
 import org.bukkit.entity.Player
 
 class PlayerRuleContext(

@@ -1,15 +1,15 @@
 package app.simplecloud.plugin.sign.shared.command
 
+import app.simplecloud.api.group.GroupServerType
 import app.simplecloud.plugin.sign.shared.config.location.SignLocation
 import app.simplecloud.plugin.sign.shared.dispatcher.PlatformDispatcher
 import app.simplecloud.plugin.sign.shared.sender.SignCommandSender
 import app.simplecloud.plugin.sign.shared.service.SignService
 import app.simplecloud.plugin.sign.shared.utils.SignCommandMessages
 import app.simplecloud.plugin.sign.shared.utils.SignCommandPermission
-import build.buf.gen.simplecloud.controller.v1.ServerType
 import com.google.common.cache.CacheBuilder
-import io.grpc.StatusException
 import kotlinx.coroutines.*
+import kotlinx.coroutines.future.await
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
@@ -343,12 +343,12 @@ $navigationButtons
                 return CommandResult.Error(SignCommandMessages.SIGN_ALREADY_REGISTERED)
             }
 
-            signService.controllerApi.getGroups().getGroupByName(group)
+            signService.controllerApi.group().getGroupByName(group).await()
             signService.register(group, location)
             CommandResult.Success(mapOf("group" to group))
         }.getOrElse { e ->
             when (e) {
-                is StatusException -> CommandResult.Error(SignCommandMessages.GROUP_NOT_FOUND)
+                is RuntimeException -> CommandResult.Error(SignCommandMessages.GROUP_NOT_FOUND)
                 else -> {
                     logger.error("Error registering sign", e)
                     CommandResult.Error(SignCommandMessages.GENERAL_ERROR)
@@ -478,8 +478,9 @@ $navigationButtons
     private fun groupSuggestions(): BlockingSuggestionProvider<C?> =
         BlockingSuggestionProvider { _, _ ->
             runBlocking {
-                signService.controllerApi.getGroups().getAllGroups()
-                    .filterNot { it.type == ServerType.PROXY }
+                signService.controllerApi.group().allGroups
+                    .await()
+                    .filterNot { it.type == GroupServerType.PROXY }
                     .map { Suggestion.suggestion(it.name) }
             }
         }

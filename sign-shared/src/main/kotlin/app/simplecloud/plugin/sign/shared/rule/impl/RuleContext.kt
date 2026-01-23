@@ -1,7 +1,7 @@
 package app.simplecloud.plugin.sign.shared.rule.impl
 
-import app.simplecloud.controller.shared.server.Server
-import build.buf.gen.simplecloud.controller.v1.ServerState
+import app.simplecloud.api.server.Server
+import app.simplecloud.api.server.ServerState
 
 open class RuleContext(
     val server: Server?,

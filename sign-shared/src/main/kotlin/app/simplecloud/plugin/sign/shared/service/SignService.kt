@@ -1,11 +1,11 @@
 package app.simplecloud.plugin.sign.shared.service
 
-import app.simplecloud.controller.api.ControllerApi
+import app.simplecloud.api.CloudApi
 import app.simplecloud.plugin.sign.shared.CloudSign
 import app.simplecloud.plugin.sign.shared.config.location.SignLocation
 
 interface SignService<T> {
-    val controllerApi: ControllerApi.Coroutine
+    val controllerApi: CloudApi
 
     fun getCloudSign(location: T): CloudSign<T>?
 

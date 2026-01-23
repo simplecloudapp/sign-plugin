@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    api(project(":sign-shared")) {
+    implementation(project(":sign-shared")) {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.jetbrains.kotlinx")
     }
@@ -13,7 +13,7 @@ dependencies {
         exclude(group = "org.jetbrains.kotlinx")
     }
     implementation(rootProject.libs.bundles.coroutine)
-    api(libs.simplecloud.api)
+    compileOnly(libs.simplecloud.api)
 }
 
 tasks {

@@ -1,6 +1,6 @@
 package app.simplecloud.plugin.sign.paper.service
 
-import app.simplecloud.controller.api.ControllerApi
+import app.simplecloud.api.CloudApi
 import app.simplecloud.plugin.sign.paper.PaperSignsPluginBootstrap
 import app.simplecloud.plugin.sign.shared.CloudSign
 import app.simplecloud.plugin.sign.shared.LocationMapper
@@ -11,7 +11,7 @@ import org.bukkit.Location
 class PaperSignService(private val bootstrap: PaperSignsPluginBootstrap) : SignService<Location>,
     LocationMapper<Location> {
 
-    override val controllerApi: ControllerApi.Coroutine
+    override val controllerApi: CloudApi
         get() = bootstrap.signManager.controllerApi
 
     override fun getCloudSign(location: Location): CloudSign<Location>? =

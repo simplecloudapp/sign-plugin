@@ -1,17 +1,17 @@
 [versions]
-kotlin = "2.1.0"
-shadow = "9.0.0-beta4"
-simplecloud-api = "0.1.0-platform.1-dev.1763294516035-de96444"
+kotlin = "2.3.0"
+shadow = "9.3.1"
+simplecloud-api = "0.1.0-platform.11-dev.1768935052096-e7e90f7"
 paper = "1.21.4-R0.1-SNAPSHOT"
 
 cloud-core = "2.0.0"
 cloud-commands = "2.0.0-SNAPSHOT"
 cloud-confirmation-processors = "1.0.0-rc.1"
-coroutine = "1.10.1"
+coroutine = "1.10.2"
 
-adventure = "4.18.0"
+adventure = "4.26.1"
 
-minotaur = "2.8.7"
+minotaur = "2.8.10"
 
 [libraries]
 kotlin-jvm = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }

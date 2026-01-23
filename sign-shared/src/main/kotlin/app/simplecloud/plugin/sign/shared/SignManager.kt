@@ -1,7 +1,7 @@
 package app.simplecloud.plugin.sign.shared
 
-import app.simplecloud.controller.api.ControllerApi
-import app.simplecloud.controller.shared.server.Server
+import app.simplecloud.api.CloudApi
+import app.simplecloud.api.server.Server
 import app.simplecloud.plugin.sign.shared.cache.ServerCache
 import app.simplecloud.plugin.sign.shared.config.layout.LayoutConfig
 import app.simplecloud.plugin.sign.shared.config.location.LocationsConfig
@@ -21,7 +21,7 @@ import org.spongepowered.configurate.serialize.TypeSerializerCollection
 import java.nio.file.Path
 
 class SignManager<T : Any>(
-    override val controllerApi: ControllerApi.Coroutine,
+    override val controllerApi: CloudApi,
     directoryPath: Path,
     private val locationMapper: LocationMapper<T>,
     private val ruleRegistry: RuleRegistry,
@@ -87,7 +87,7 @@ class SignManager<T : Any>(
         state.getCloudSign(location)
 
     override fun getAllLocations(): List<SignLocation> =
-        locationsRepository.getAll().map { it.locations }.flatten()
+        locationsRepository.getAll().flatMap { it.locations }
 
     override fun getAllGroupsRegistered(): List<String> =
         locationsRepository.getAll()
@@ -174,7 +174,7 @@ class SignManager<T : Any>(
     private suspend fun updateSigns(locationsConfig: LocationsConfig, servers: List<Server>) {
         val unusedServers = servers.asSequence()
             .filterNot { server ->
-                state.isServerAssigned(server.uniqueId)
+                state.isServerAssigned(server.serverId)
             }
             .filter { server ->
                 val context = RuleContext(server, server.state)
@@ -195,8 +195,8 @@ class SignManager<T : Any>(
     ) {
         val mappedLocation = locationMapper.map(locationConfig)
         val existingSign = state.getCloudSign(mappedLocation)
-        val currentServer = existingSign?.server?.uniqueId?.let { uniqueId ->
-            allServers.firstOrNull { it.uniqueId == uniqueId }
+        val currentServer = existingSign?.server?.serverId?.let { uniqueId ->
+            allServers.firstOrNull { it.serverId == uniqueId }
         }
 
         val newSign = when {

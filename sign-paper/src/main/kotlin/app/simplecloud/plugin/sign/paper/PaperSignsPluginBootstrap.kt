@@ -1,6 +1,6 @@
 package app.simplecloud.plugin.sign.paper
 
-import app.simplecloud.controller.api.ControllerApi
+import app.simplecloud.api.CloudApi
 import app.simplecloud.plugin.sign.paper.dispatcher.PaperPlatformDispatcher
 import app.simplecloud.plugin.sign.paper.rule.PaperRuleRegistry
 import app.simplecloud.plugin.sign.paper.rule.PlayerRuleContext
@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory
 class PaperSignsPluginBootstrap : PluginBootstrap {
 
     private val logger = LoggerFactory.getLogger(PaperSignsPluginBootstrap::class.java)
-    private val controllerApi = ControllerApi.createCoroutineApi()
+    private val controllerApi = CloudApi.create()
     private val miniMessage = MiniMessage.miniMessage()
 
     lateinit var signManager: SignManager<Location>
@@ -146,10 +146,10 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
 
     private fun getPlaceholders(cloudSign: CloudSign<*>, context: RuleContext): List<TagResolver> = buildList {
         with(cloudSign.server) {
-            add(Placeholder.parsed("group", this?.group ?: "unknown"))
+            add(Placeholder.parsed("group", this?.group?.name ?: "unknown"))
             add(Placeholder.parsed("numerical-id", this?.numericalId?.toString() ?: "0"))
-            add(Placeholder.parsed("type", this?.type?.toString() ?: "unknown"))
-            add(Placeholder.parsed("host", this?.host ?: "unknown"))
+            //add(Placeholder.parsed("type", this?.type?.toString() ?: "unknown"))
+            add(Placeholder.parsed("host", this?.serverhostId ?: "unknown"))
             add(Placeholder.parsed("ip", this?.ip ?: "unknown"))
             add(Placeholder.parsed("port", this?.port?.toString() ?: "0"))
             add(Placeholder.parsed("min-memory", this?.minMemory?.toString() ?: "0"))
@@ -158,11 +158,11 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
             add(Placeholder.parsed("player-count", this?.playerCount?.toString() ?: "0"))
             add(Placeholder.parsed("state", this?.state?.toString() ?: "unknown"))
             add(
-                TagResolver.resolver("property") {arguments, context ->
+                TagResolver.resolver("property") {arguments, _ ->
                     val argumentName = arguments.popOr("property expected").value()
                     val defaultArgument = arguments.peek()?.value() ?: ""
                     val string = this?.properties?.get(argumentName) ?: defaultArgument
-                    Tag.preProcessParsed(string)
+                    Tag.preProcessParsed(string.toString())
                 }
             )
         }

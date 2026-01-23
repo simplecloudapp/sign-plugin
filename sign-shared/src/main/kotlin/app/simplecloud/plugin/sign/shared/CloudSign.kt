@@ -1,6 +1,6 @@
 package app.simplecloud.plugin.sign.shared
 
-import app.simplecloud.controller.shared.server.Server
+import app.simplecloud.api.server.Server
 
 data class CloudSign<T>(
 

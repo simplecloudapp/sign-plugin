@@ -1,6 +1,6 @@
 package app.simplecloud.plugin.sign.shared.rule
 
-import build.buf.gen.simplecloud.controller.v1.ServerState
+import app.simplecloud.api.server.ServerState
 import org.spongepowered.configurate.objectmapping.ConfigSerializable
 
 @ConfigSerializable

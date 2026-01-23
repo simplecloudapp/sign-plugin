@@ -70,7 +70,7 @@ data class SignState<T : Any>(
     }
 
     fun isServerAssigned(serverId: String): Boolean =
-        cloudSigns.values.any { it.server?.uniqueId == serverId }
+        cloudSigns.values.any { it.server?.serverId == serverId }
 
     suspend fun clear() =
         mutex.withLock {
