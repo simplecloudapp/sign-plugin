@@ -1,7 +1,16 @@
-name: SimpleCloud-Signs
+name: simplecloud-signs
 version: 1.0
 authors: [ Fllip, PrexorDev ]
 description: A simple plugin that adds signs to SimpleCloud
 main: app.simplecloud.plugin.sign.paper.PaperSignsPlugin
 api-version: "1.20"
 bootstrapper: app.simplecloud.plugin.sign.paper.PaperSignsPluginBootstrap
+dependencies:
+  bootstrap:
+    simplecloud-api:
+      load: BEFORE
+      required: true
+  server:
+    simplecloud-api:
+      load: BEFORE
+      required: true
