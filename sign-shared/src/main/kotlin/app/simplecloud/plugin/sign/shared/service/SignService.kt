@@ -21,6 +21,7 @@ interface SignService<T> {
     fun registerForPersistentServer(persistentServerId: String, location: T)
 
     suspend fun removeCloudSign(location: T)
+    suspend fun removeCloudSign(location: SignLocation)
 
     fun exists(key: String): Boolean
 

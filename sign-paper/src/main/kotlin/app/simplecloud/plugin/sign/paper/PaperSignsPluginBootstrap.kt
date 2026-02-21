@@ -153,25 +153,25 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
                 this.isFromPersistentServer -> this.persistentServer?.name ?: this.serverId
                 else -> this.serverBase.name
             }
-            add(Placeholder.parsed("server-name", serverName))
+            add(Placeholder.unparsed("server-name", serverName))
 
             // Group-based server placeholders
-            add(Placeholder.parsed("group", this?.group?.name ?: ""))
-            add(Placeholder.parsed("numerical-id", this?.numericalId?.toString() ?: "0"))
+            add(Placeholder.unparsed("group", this?.group?.name ?: ""))
+            add(Placeholder.unparsed("numerical-id", this?.numericalId?.toString() ?: "0"))
 
             // Persistent server placeholders
-            add(Placeholder.parsed("persistent-server", this?.persistentServer?.name ?: ""))
+            add(Placeholder.unparsed("persistent-server", this?.persistentServer?.name ?: ""))
 
             // Common placeholders
-            add(Placeholder.parsed("server-id", this?.serverId ?: "unknown"))
-            add(Placeholder.parsed("host", this?.serverhostId ?: "unknown"))
-            add(Placeholder.parsed("ip", this?.ip ?: "unknown"))
-            add(Placeholder.parsed("port", this?.port?.toString() ?: "0"))
-            add(Placeholder.parsed("min-memory", this?.minMemory?.toString() ?: "0"))
-            add(Placeholder.parsed("max-memory", this?.maxMemory?.toString() ?: "0"))
-            add(Placeholder.parsed("max-players", this?.maxPlayers?.toString() ?: "0"))
-            add(Placeholder.parsed("player-count", this?.playerCount?.toString() ?: "0"))
-            add(Placeholder.parsed("state", this?.state?.toString() ?: "unknown"))
+            add(Placeholder.unparsed("server-id", this?.serverId ?: "unknown"))
+            add(Placeholder.unparsed("host", this?.serverhostId ?: "unknown"))
+            add(Placeholder.unparsed("ip", this?.ip ?: "unknown"))
+            add(Placeholder.unparsed("port", this?.port?.toString() ?: "0"))
+            add(Placeholder.unparsed("min-memory", this?.minMemory?.toString() ?: "0"))
+            add(Placeholder.unparsed("max-memory", this?.maxMemory?.toString() ?: "0"))
+            add(Placeholder.unparsed("max-players", this?.maxPlayers?.toString() ?: "0"))
+            add(Placeholder.unparsed("player-count", this?.playerCount?.toString() ?: "0"))
+            add(Placeholder.unparsed("state", this?.state?.toString() ?: "unknown"))
             add(
                 TagResolver.resolver("property") {arguments, _ ->
                     val argumentName = arguments.popOr("property expected").value()
@@ -183,8 +183,10 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
         }
 
         if (context is PlayerRuleContext) {
-            add(Placeholder.parsed("player_name", context.player.name))
-            add(Placeholder.parsed("player_sender", context.player.server.name))
+            add(Placeholder.unparsed("player_name", context.player.name))
+            add(Placeholder.unparsed("player_sender", context.player.server.name))
+            add(Placeholder.unparsed("player-name", context.player.name))
+            add(Placeholder.unparsed("player-sender", context.player.server.name))
         }
     }
 

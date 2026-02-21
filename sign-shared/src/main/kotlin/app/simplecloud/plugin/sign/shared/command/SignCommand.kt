@@ -210,7 +210,7 @@ class SignCommand<C : SignCommandSender, T>(
             sender.sendMessage(Component.empty())
         }
 
-        sendMessage(sender, "<color:#38bdf8>✦ <bold>All Registered Signs</bold></color>")
+        sendMessage(sender, "<color:#38bdf8><bold>⚡</bold></color> <color:#ffffff>All Registered Signs</color>")
         sendMessage(sender, "<color:#a8a8a8>════════════════════════</color>")
 
         val allLocations = allConfigs.flatMap { config ->
@@ -300,7 +300,9 @@ $navigationButtons
 
         sendMessage(
             sender,
-            "<color:#38bdf8>✦ <bold>Group Signs: ${group}</bold></color> <gray>(${locations.size} signs)</gray>"
+            "<color:#38bdf8><bold>⚡</bold></color> <color:#ffffff>Group Signs: <color:#fbbf24><group></color></color> <color:#a3a3a3>(<amount> signs)</color>",
+            "group" to group,
+            "amount" to locations.size.toString()
         )
         sendMessage(sender, "<color:#a8a8a8>════════════════════════</color>")
 
@@ -340,14 +342,14 @@ $navigationButtons
         crossinline action: suspend (T, String) -> CommandResult
     ) {
         val signLocation = getSignLocation(sender, operation) ?: return
-
-        commandScope.launch {
-            try {
-                executeCommand(sender) { action(signService.map(signLocation), group) }
-            } catch (e: Exception) {
-                logger.error("Error executing sign operation", e)
-                sendMessage(sender, SignCommandMessages.GENERAL_ERROR)
-            }
+        val mappedLocation = withContext(platformDispatcher.getDispatcher()) {
+            signService.map(signLocation)
+        }
+        try {
+            executeCommand(sender) { action(mappedLocation, group) }
+        } catch (e: Exception) {
+            logger.error("Error executing sign operation", e)
+            sendMessage(sender, SignCommandMessages.GENERAL_ERROR)
         }
     }
 
@@ -382,7 +384,11 @@ $navigationButtons
             CommandResult.Success(mapOf("group" to group))
         }.getOrElse { e ->
             when (e) {
-                is RuntimeException -> CommandResult.Error(SignCommandMessages.GROUP_NOT_FOUND)
+                is RuntimeException ->
+                    CommandResult.Error(
+                        SignCommandMessages.GROUP_NOT_FOUND,
+                        mapOf("group" to group)
+                    )
                 else -> {
                     logger.error("Error registering sign", e)
                     CommandResult.Error(SignCommandMessages.GENERAL_ERROR)
@@ -402,7 +408,11 @@ $navigationButtons
             CommandResult.Success(mapOf("group" to persistentServer))
         }.getOrElse { e ->
             when (e) {
-                is RuntimeException -> CommandResult.Error(SignCommandMessages.PERSISTENT_SERVER_NOT_FOUND)
+                is RuntimeException ->
+                    CommandResult.Error(
+                        SignCommandMessages.PERSISTENT_SERVER_NOT_FOUND,
+                        mapOf("persistent-server" to persistentServer)
+                    )
                 else -> {
                     logger.error("Error registering sign", e)
                     CommandResult.Error(SignCommandMessages.GENERAL_ERROR)
@@ -413,12 +423,14 @@ $navigationButtons
 
     private suspend fun executeRemoveSign(location: T): CommandResult {
         return runCatching {
-            println("Removing sign $location")
-            val cloudSign = signService.getCloudSign(location)
-                ?: return CommandResult.Error(SignCommandMessages.SIGN_REMOVE_NOT_REGISTERED)
+            val signLocation = signService.unmap(location)
+            val isRegistered = signService.getAllLocations().any { it == signLocation }
+            if (!isRegistered) {
+                return CommandResult.Error(SignCommandMessages.SIGN_REMOVE_NOT_REGISTERED)
+            }
 
-            signService.removeCloudSign(cloudSign.location)
-            clearSign(cloudSign.location)
+            signService.removeCloudSign(signLocation)
+            clearSign(location)
 
             CommandResult.Success()
         }.getOrElse { e ->
@@ -432,24 +444,31 @@ $navigationButtons
             val locations = signService.getLocationsByKey(key)
                 ?.takeIf { it.isNotEmpty() }
                 ?: return CommandResult.Error(
-                    SignCommandMessages.SIGN_REMOVE_GROUP_NOT_REGISTERED.replace("<group>", key)
+                    SignCommandMessages.SIGN_REMOVE_GROUP_NOT_REGISTERED,
+                    mapOf("group" to key)
                 )
+            val mappedLocations = withContext(platformDispatcher.getDispatcher()) {
+                locations.map { signService.map(it) }
+            }
 
-            val amount = locations.size
+            val amount = mappedLocations.size
 
             locations.forEach { location ->
-                val mapLocation = signService.map(location)
-                signService.removeCloudSign(mapLocation)
+                signService.removeCloudSign(location)
             }
 
             withContext(platformDispatcher.getDispatcher()) {
-                locations.forEach { location ->
-                    val mapLocation = signService.map(location)
-                    clearSign(mapLocation)
+                mappedLocations.forEach { location ->
+                    clearSign(location)
                 }
             }
 
-            CommandResult.Success(mapOf("amount" to amount))
+            CommandResult.Success(
+                mapOf(
+                    "amount" to amount,
+                    "group" to key
+                )
+            )
         }.getOrElse { e ->
             logger.error("Error removing group signs", e)
             CommandResult.Error(SignCommandMessages.GENERAL_ERROR)
@@ -469,15 +488,15 @@ $navigationButtons
         when (val result = action()) {
             is CommandResult.Success -> {
                 val message = when {
-                    result.data.containsKey("group") -> SignCommandMessages.SIGN_CREATE_SUCCESS
                     result.data.containsKey("amount") -> SignCommandMessages.SIGN_REMOVE_GROUP_SUCCESS
+                    result.data.containsKey("group") -> SignCommandMessages.SIGN_CREATE_SUCCESS
                     else -> SignCommandMessages.SIGN_REMOVE_SUCCESS
                 }
 
                 sendMessage(sender, message, *result.data.toArray())
             }
 
-            is CommandResult.Error -> sendMessage(sender, result.message)
+            is CommandResult.Error -> sendMessage(sender, result.message, *result.data.toArray())
         }
     }
 
@@ -485,6 +504,7 @@ $navigationButtons
         sendMessage(sender, "")
         sendMessage(sender, SignCommandMessages.HELP_HEADER)
         sendMessage(sender, SignCommandMessages.HELP_ADD)
+        sendMessage(sender, SignCommandMessages.HELP_ADD_PERSISTENT)
         sendMessage(sender, SignCommandMessages.HELP_REMOVE)
         sendMessage(sender, SignCommandMessages.HELP_LIST)
     }
@@ -508,14 +528,14 @@ $navigationButtons
         operation: SignOperation = SignOperation.ADD
     ): SignLocation? =
         sender.getTargetBlock(MAX_SIGN_DISTANCE)?.let { location ->
-            val hasExistingSign = signService.getCloudSign(signService.map(location)) != null
+            val isRegisteredSign = signService.getAllLocations().any { it == location }
             when (operation) {
-                SignOperation.ADD -> if (!hasExistingSign) location else {
+                SignOperation.ADD -> if (!isRegisteredSign) location else {
                     sender.sendMessage(getCachedMessage(SignCommandMessages.SIGN_ALREADY_REGISTERED))
                     null
                 }
 
-                SignOperation.REMOVE -> if (hasExistingSign) location else {
+                SignOperation.REMOVE -> if (isRegisteredSign) location else {
                     sender.sendMessage(getCachedMessage(SignCommandMessages.SIGN_REMOVE_NOT_REGISTERED))
                     null
                 }
@@ -564,5 +584,8 @@ private enum class SignOperation {
 
 sealed interface CommandResult {
     data class Success(val data: Map<String, Any> = emptyMap()) : CommandResult
-    data class Error(val message: String) : CommandResult
+    data class Error(
+        val message: String,
+        val data: Map<String, Any> = emptyMap()
+    ) : CommandResult
 }

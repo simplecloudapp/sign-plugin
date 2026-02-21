@@ -2,6 +2,7 @@ package app.simplecloud.plugin.sign.shared.repository.location
 
 import app.simplecloud.plugin.sign.shared.LocationMapper
 import app.simplecloud.plugin.sign.shared.config.location.LocationsConfig
+import app.simplecloud.plugin.sign.shared.config.location.SignLocation
 import app.simplecloud.plugin.sign.shared.repository.base.YamlDirectoryRepository
 import java.nio.file.Files
 import java.nio.file.Path
@@ -29,6 +30,10 @@ class LocationsRepository<T : Any>(
         return entities.values.find { it -> it.locations.any { it == locationMapper.unmap(location) } }
     }
 
+    private fun findBySignLocation(location: SignLocation): LocationsConfig? {
+        return entities.values.find { config -> config.locations.any { it == location } }
+    }
+
     fun saveLocationForGroup(group: String, location: T) {
         val config = find(group) ?: LocationsConfig(group = group)
         val signLocation = locationMapper.unmap(location)
@@ -41,8 +46,7 @@ class LocationsRepository<T : Any>(
     }
 
     fun saveLocationForPersistentServer(persistentServerId: String, location: T) {
-        val key = "ps:$persistentServerId"
-        val config = find(key) ?: LocationsConfig(persistentServer = persistentServerId)
+        val config = find(persistentServerId) ?: LocationsConfig(persistentServer = persistentServerId)
         val signLocation = locationMapper.unmap(location)
 
         save(
@@ -61,5 +65,10 @@ class LocationsRepository<T : Any>(
         val signLocation = locationMapper.unmap(location)
 
         save(config.copy(locations = config.locations - signLocation))
+    }
+
+    fun removeSignLocation(location: SignLocation) {
+        val config = findBySignLocation(location) ?: return
+        save(config.copy(locations = config.locations - location))
     }
 }

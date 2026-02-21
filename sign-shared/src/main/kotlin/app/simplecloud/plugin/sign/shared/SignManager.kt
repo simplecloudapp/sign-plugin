@@ -105,6 +105,12 @@ class SignManager<T : Any>(
         locationsRepository.removeLocation(location)
     }
 
+    override suspend fun removeCloudSign(location: SignLocation) {
+        val mappedLocation = locationMapper.map(location)
+        state.removeCloudSign(mappedLocation)
+        locationsRepository.removeSignLocation(location)
+    }
+
     override fun exists(key: String): Boolean =
         locationsRepository.getAll().any { it.getIdentifier() == key }
 

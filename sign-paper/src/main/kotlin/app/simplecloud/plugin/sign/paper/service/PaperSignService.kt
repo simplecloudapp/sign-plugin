@@ -36,6 +36,9 @@ class PaperSignService(private val bootstrap: PaperSignsPluginBootstrap) : SignS
     override suspend fun removeCloudSign(location: Location) =
         bootstrap.signManager.removeCloudSign(location)
 
+    override suspend fun removeCloudSign(location: SignLocation) =
+        bootstrap.signManager.removeCloudSign(location)
+
     override fun exists(key: String): Boolean =
         bootstrap.signManager.exists(key)
 
