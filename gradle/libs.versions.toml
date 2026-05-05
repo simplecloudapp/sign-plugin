@@ -5,7 +5,7 @@ simplecloud-api = "0.1.0-platform.13-dev.1769195172662-ee74b74"
 paper = "1.21.4-R0.1-SNAPSHOT"
 
 cloud-core = "2.0.0"
-cloud-commands = "2.0.0-SNAPSHOT"
+cloud-commands = "2.0.0-beta.15"
 cloud-confirmation-processors = "1.0.0-rc.1"
 coroutine = "1.10.2"
 
