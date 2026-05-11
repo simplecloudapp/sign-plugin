@@ -1,6 +1,7 @@
 name: 'maintenance_default'
 rule: 'MAINTENANCE'
 priority: 7
+behind-block: 'RED_CONCRETE'
 frame-update-interval: 1000
 
 frames:

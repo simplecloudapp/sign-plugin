@@ -1,6 +1,7 @@
 name: 'offline_default'
 rule: 'OFFLINE'
 priority: 50
+behind-block: 'LIGHT_BLUE_CONCRETE'
 frame-update-interval: 500
 
 frames:

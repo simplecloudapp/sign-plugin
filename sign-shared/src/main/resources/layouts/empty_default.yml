@@ -1,6 +1,7 @@
 name: 'empty_default'
 rule: 'EMPTY'
 priority: 10
+behind-block: 'LIME_CONCRETE'
 frame-update-interval: 1000
 
 frames:

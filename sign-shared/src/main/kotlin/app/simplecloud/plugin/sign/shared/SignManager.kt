@@ -259,7 +259,7 @@ class SignManager<T : Any>(
 
         val currentFrameIndex = state.getCurrentFrameIndex(layout.name)
         val currentFrame = layout.frames[currentFrameIndex]
-        signUpdater.update(cloudSign, currentFrame)
+        signUpdater.update(cloudSign, layout, currentFrame)
     }
 
     private suspend fun updateLayoutIndexes() {

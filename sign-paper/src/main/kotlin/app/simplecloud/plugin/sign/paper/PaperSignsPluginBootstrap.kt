@@ -11,6 +11,7 @@ import app.simplecloud.plugin.sign.shared.CloudSign
 import app.simplecloud.plugin.sign.shared.SignManager
 import app.simplecloud.plugin.sign.shared.command.SignCommand
 import app.simplecloud.plugin.sign.shared.config.layout.FrameConfig
+import app.simplecloud.plugin.sign.shared.config.layout.LayoutConfig
 import app.simplecloud.plugin.sign.shared.rule.impl.RuleContext
 import io.papermc.paper.plugin.bootstrap.BootstrapContext
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap
@@ -22,8 +23,10 @@ import net.kyori.adventure.text.minimessage.tag.Tag
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import org.bukkit.Location
+import org.bukkit.Material
 import org.bukkit.block.Sign
 import org.bukkit.block.sign.Side
+import org.bukkit.block.data.Directional
 import org.bukkit.plugin.java.JavaPlugin
 import org.incendo.cloud.execution.ExecutionCoordinator
 import org.incendo.cloud.paper.PaperCommandManager
@@ -66,8 +69,8 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
             context.dataDirectory,
             PaperSignService(this),
             PaperRuleRegistry()
-        ) { cloudSign, frameConfig ->
-            updateSign(cloudSign, frameConfig)
+        ) { cloudSign, layoutConfig, frameConfig ->
+            updateSign(cloudSign, layoutConfig, frameConfig)
         }
     }
 
@@ -102,11 +105,12 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
         }
     }
 
-    private fun updateSign(cloudSign: CloudSign<Location>, frameConfig: FrameConfig) {
+    private fun updateSign(cloudSign: CloudSign<Location>, layoutConfig: LayoutConfig, frameConfig: FrameConfig) {
         val location = cloudSign.location
         plugin.server.scheduler.runTask(plugin, Runnable {
             try {
                 val sign = location.block.state as? Sign ?: return@Runnable
+                updateBehindBlock(sign, layoutConfig)
 
                 val onlinePlayers = plugin.server.onlinePlayers
 
@@ -124,6 +128,23 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
                 logger.error("Failed to update sign at location: $location", e)
             }
         })
+    }
+
+    private fun updateBehindBlock(sign: Sign, layoutConfig: LayoutConfig) {
+        val materialName = layoutConfig.behindBlock ?: return
+        val material = Material.matchMaterial(materialName)
+
+        if (material == null || !material.isBlock) {
+            logger.warn("Invalid behind-block material '{}' in layout '{}'", materialName, layoutConfig.name)
+            return
+        }
+
+        val directional = sign.block.blockData as? Directional ?: return
+        val behindBlock = sign.block.getRelative(directional.facing.oppositeFace)
+
+        if (behindBlock.type != material) {
+            behindBlock.type = material
+        }
     }
 
     private fun updateSignLines(sign: Sign, frameConfig: FrameConfig, cloudSign: CloudSign<*>, context: RuleContext) {

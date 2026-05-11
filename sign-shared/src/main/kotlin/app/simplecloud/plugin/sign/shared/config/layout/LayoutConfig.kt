@@ -19,6 +19,8 @@ data class LayoutConfig(
     val ruleName: String = "EMPTY",
     val priority: Int = 0,
     val serverName: String = "%server-name%",
+    @Setting("behind-block")
+    val behindBlock: String? = null,
     val frameUpdateInterval: Long = 500,
     val frames: List<FrameConfig> = listOf(),
 ) {

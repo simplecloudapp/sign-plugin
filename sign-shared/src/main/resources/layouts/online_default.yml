@@ -1,6 +1,7 @@
 name: 'online_default'
 rule: 'ONLINE'
 priority: 9
+behind-block: 'LIME_CONCRETE'
 frame-update-interval: 1250
 
 frames:

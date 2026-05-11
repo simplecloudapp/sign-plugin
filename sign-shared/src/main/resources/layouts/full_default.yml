@@ -1,6 +1,7 @@
 name: 'full_default'
 rule: 'FULL'
 priority: 8
+behind-block: 'RED_CONCRETE'
 frame-update-interval: 1250
 
 frames:

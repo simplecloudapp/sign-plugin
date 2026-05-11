@@ -1,6 +1,7 @@
 name: 'starting_default'
 rule: 'STARTING'
 priority: 6
+behind-block: 'LIGHT_BLUE_CONCRETE'
 frame-update-interval: 500
 
 frames:
