@@ -17,22 +17,27 @@ data class SignListener(private val plugin: PaperSignsPlugin) : Listener {
     fun handleSignInteract(event: PlayerInteractEvent) {
         if (event.action != Action.RIGHT_CLICK_BLOCK || event.clickedBlock == null) return
 
-        val sign = (event.clickedBlock?.state as? Sign) ?: return
+        val clickedBlock = event.clickedBlock ?: return
+        val sign = (clickedBlock.state as? Sign) ?: return
 
-        plugin.bootstrap.signManager.getCloudSign(sign.location)?.let { cloudSign ->
-            event.isCancelled = true
+        val cloudSign = plugin.bootstrap.signManager.getCloudSign(sign.location)
+            ?: return
 
-            val playerRuleContext = PlayerRuleContext(
-                server = cloudSign.server,
-                serverState = cloudSign.server?.state,
-                event.player
-            )
+        event.isCancelled = true
 
-            cloudSign.server?.let { server ->
-                val serverName = plugin.bootstrap.signManager.getLayout(playerRuleContext).constructName(server)
-                plugin.sendPlayerToServer(event.player, serverName)
-            }
-        }
+        val playerRuleContext = PlayerRuleContext(
+            server = cloudSign.server,
+            serverState = cloudSign.server?.state,
+            event.player
+        )
+
+        val server = cloudSign.server
+            ?: return
+
+        val layout = plugin.bootstrap.signManager.getLayout(playerRuleContext)
+        val serverName = layout.constructName(server)
+
+        plugin.sendPlayerToServer(event.player, serverName)
     }
 
     @EventHandler

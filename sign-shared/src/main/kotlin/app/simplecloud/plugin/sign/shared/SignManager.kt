@@ -220,9 +220,9 @@ class SignManager<T : Any>(
     private fun getServerDisplayName(server: Server?): String {
         if (server == null) return ""
         return when {
-            server.isFromGroup -> "${server.serverGroupId}-${server.numericalId}"
-            server.isFromPersistentServer -> server.persistentServerId ?: server.serverId
-            else -> server.serverId
+            server.isFromGroup -> "${server.group?.name ?: server.serverGroupId}-${server.numericalId}"
+            server.isFromPersistentServer -> server.persistentServer?.name ?: server.persistentServerId ?: server.serverId
+            else -> server.serverBase.name
         }
     }
 

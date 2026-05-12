@@ -39,15 +39,15 @@ data class LayoutConfig(
 
     fun constructName(server: Server): String {
         val baseName = when {
-            server.isFromGroup -> "${server.serverGroupId}-${server.numericalId}"
-            server.isFromPersistentServer -> server.persistentServerId ?: server.serverId
-            else -> server.serverId
+            server.isFromGroup -> "${server.group?.name ?: server.serverGroupId}-${server.numericalId}"
+            server.isFromPersistentServer -> server.persistentServer?.name ?: server.persistentServerId ?: server.serverId
+            else -> server.serverBase.name
         }
         return serverName
             .replace("%server-name%", baseName)
-            .replace("%group%", server.serverGroupId ?: "")
+            .replace("%group%", server.group?.name ?: server.serverGroupId ?: "")
             .replace("%numerical-id%", server.numericalId.toString())
-            .replace("%persistent-server%", server.persistentServerId ?: "")
+            .replace("%persistent-server%", server.persistentServer?.name ?: server.persistentServerId ?: "")
     }
 
     /**
