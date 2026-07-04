@@ -3,10 +3,10 @@ dependencies {
     implementation(rootProject.libs.bundles.cloud.core)
     compileOnly(rootProject.libs.bundles.adventure)
 
-    api("org.spongepowered:configurate-yaml:4.0.0")
-    api("org.spongepowered:configurate-extra-kotlin:4.1.2")
+    api(rootProject.libs.configurate.yaml)
+    api(rootProject.libs.configurate.extra.kotlin)
 
-    compileOnly("ch.qos.logback:logback-classic:1.5.25")
+    compileOnly(rootProject.libs.logback.classic)
 
-    compileOnly("com.google.guava:guava:33.5.0-jre")
+    compileOnly(rootProject.libs.guava)
 }

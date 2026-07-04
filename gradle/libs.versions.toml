@@ -1,17 +1,20 @@
 [versions]
-kotlin = "2.3.0"
-shadow = "9.3.1"
-simplecloud-api = "0.1.0-platform.13-dev.1769195172662-ee74b74"
-paper = "1.21.4-R0.1-SNAPSHOT"
+kotlin = "2.4.0"
+shadow = "9.4.3"
+simplecloud-api = "0.1.0-platform.33-dev.52.1-9490b37"
+paper = "1.21.11-R0.1-SNAPSHOT"
 
 cloud-core = "2.0.0"
-cloud-commands = "2.0.0-beta.15"
+cloud-commands = "2.0.0-beta.17"
 cloud-confirmation-processors = "1.0.0-rc.1"
-coroutine = "1.10.2"
+coroutine = "1.11.0"
 
 adventure = "4.26.1"
+configurate = "4.2.0"
+logback = "1.5.37"
+guava = "33.6.0-jre"
 
-minotaur = "2.8.10"
+minotaur = "2.9.0"
 
 [libraries]
 kotlin-jvm = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
@@ -33,6 +36,11 @@ coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-androi
 
 adventure = { module = "net.kyori:adventure-api", version.ref = "adventure" }
 adventure-text-minimessage = { module = "net.kyori:adventure-text-minimessage", version.ref = "adventure" }
+
+configurate-yaml = { module = "org.spongepowered:configurate-yaml", version.ref = "configurate" }
+configurate-extra-kotlin = { module = "org.spongepowered:configurate-extra-kotlin", version.ref = "configurate" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
 
 [bundles]
 cloud-core = ["cloud-core", "cloud-kotlin-coroutines", "cloud-kotlin-extensions"]
