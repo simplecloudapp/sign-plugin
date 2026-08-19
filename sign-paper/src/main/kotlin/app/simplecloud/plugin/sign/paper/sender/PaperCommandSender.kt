@@ -9,7 +9,9 @@ import io.papermc.paper.command.brigadier.CommandSourceStack
 import kotlinx.coroutines.withContext
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
+import org.bukkit.Bukkit
 import org.bukkit.FluidCollisionMode
+import org.bukkit.Location
 import org.bukkit.block.Sign
 import org.bukkit.entity.Player
 
@@ -38,6 +40,15 @@ class PaperCommandSender(
                 z = targetBlock.z.toDouble(),
                 direction = targetBlock.blockData.resolveSignDirection()
             )
+        }
+    }
+
+    override suspend fun teleport(location: SignLocation): Boolean {
+        val player = sourceStack.sender as? Player ?: return false
+        val world = Bukkit.getWorld(location.world) ?: return false
+
+        return withContext(PaperSignsPlugin.instance.bootstrap.platformDispatcher.getDispatcher()) {
+            player.teleport(Location(world, location.x, location.y, location.z))
         }
     }
 }

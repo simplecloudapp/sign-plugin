@@ -18,6 +18,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.incendo.cloud.Command
 import org.incendo.cloud.CommandManager
 import org.incendo.cloud.description.Description
+import org.incendo.cloud.parser.standard.DoubleParser
 import org.incendo.cloud.parser.standard.IntegerParser
 import org.incendo.cloud.parser.standard.StringParser
 import org.incendo.cloud.suggestion.BlockingSuggestionProvider
@@ -80,6 +81,7 @@ class SignCommand<C : SignCommandSender, T>(
                 createAddPersistentCommand(baseCommand),
                 createRemoveCommand(baseCommand),
                 createRemoveGroupCommand(baseCommand),
+                createTpCommand(baseCommand),
             ).forEach { command(it) }
         }
     }
@@ -191,6 +193,30 @@ class SignCommand<C : SignCommandSender, T>(
                 handleRemoveGroupCommand(context.sender(), context.getOrDefault("group", ""))
             }
 
+    private fun createTpCommand(baseCommand: Command.Builder<C>) =
+        baseCommand.literal("tp")
+            .commandDescription(Description.of("Teleport to a registered CloudSign"))
+            .required("world", StringParser.stringParser())
+            .required("x", DoubleParser.doubleParser())
+            .required("y", DoubleParser.doubleParser())
+            .required("z", DoubleParser.doubleParser())
+            .permission(SignCommandPermission.TP.node)
+            .handler { context ->
+                commandScope.launch {
+                    val location = SignLocation(
+                        world = context["world"],
+                        x = context.get("x"),
+                        y = context.get("y"),
+                        z = context.get("z"),
+                    )
+
+                    val success = context.sender().teleport(location)
+                    if (!success) {
+                        sendMessage(context.sender(), SignCommandMessages.TP_FAILED)
+                    }
+                }
+            }
+
     private fun handleListCommand(sender: SignCommandSender, group: String, page: Int = 1) {
         commandScope.launch {
             runCatching {
@@ -251,7 +277,7 @@ class SignCommand<C : SignCommandSender, T>(
 
         val paginatedLocations = groupedLocations.subList(startIndex, endIndex)
         val locationInformation = paginatedLocations.joinToString("\n") { (group, location) ->
-            """<click:run_command:/sign tp ${location.world} ${location.x.toInt()} ${location.y.toInt()} ${location.z.toInt()}><hover:show_text:'Click to teleport'>
+            """<click:run_command:/sign tp ${location.world} ${location.x} ${location.y} ${location.z}><hover:show_text:'Click to teleport'>
 <color:#a8a8a8>└─ <color:#4ade80>Group:</color> <color:#ffffff>${group}</color>
    <color:#a8a8a8>├─</color> <color:#38bdf8>World:</color> <color:#ffffff>${location.world}</color>
    <color:#a8a8a8>├─</color> <color:#38bdf8>X:</color> <color:#ffffff>${location.x}</color>
@@ -316,7 +342,7 @@ $navigationButtons
 
         val paginatedLocations = locations.subList(startIndex, endIndex)
         val locationInformation = paginatedLocations.joinToString("\n") { location ->
-            """<click:run_command:/minecraft:tp ${location.x} ${location.y} ${location.z}><hover:show_text:'Click to teleport'>
+            """<click:run_command:/sign tp ${location.world} ${location.x} ${location.y} ${location.z}><hover:show_text:'Click to teleport'>
 <color:#a8a8a8>└─ <color:#4ade80>World:</color> <color:#ffffff>${location.world}</color>
    <color:#a8a8a8>├─</color> <color:#38bdf8>X:</color> <color:#ffffff>${location.x}</color>
    <color:#a8a8a8>├─</color> <color:#38bdf8>Y:</color> <color:#ffffff>${location.y}</color>
