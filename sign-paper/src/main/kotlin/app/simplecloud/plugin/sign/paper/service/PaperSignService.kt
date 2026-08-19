@@ -2,6 +2,7 @@ package app.simplecloud.plugin.sign.paper.service
 
 import app.simplecloud.api.CloudApi
 import app.simplecloud.plugin.sign.paper.PaperSignsPluginBootstrap
+import app.simplecloud.plugin.sign.paper.util.resolveSignDirection
 import app.simplecloud.plugin.sign.shared.CloudSign
 import app.simplecloud.plugin.sign.shared.LocationMapper
 import app.simplecloud.plugin.sign.shared.config.location.LocationsConfig
@@ -55,6 +56,7 @@ class PaperSignService(private val bootstrap: PaperSignsPluginBootstrap) : SignS
             location.world.name,
             location.x,
             location.y,
-            location.z
+            location.z,
+            location.block.blockData.resolveSignDirection()
         )
 }

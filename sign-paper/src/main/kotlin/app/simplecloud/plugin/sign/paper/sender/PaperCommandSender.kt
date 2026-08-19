@@ -1,6 +1,7 @@
 package app.simplecloud.plugin.sign.paper.sender
 
 import app.simplecloud.plugin.sign.paper.PaperSignsPlugin
+import app.simplecloud.plugin.sign.paper.util.resolveSignDirection
 import app.simplecloud.plugin.sign.shared.config.location.SignLocation
 import app.simplecloud.plugin.sign.shared.sender.SignCommandSender
 import app.simplecloud.plugin.sign.shared.utils.SignCommandMessages
@@ -12,7 +13,6 @@ import org.bukkit.FluidCollisionMode
 import org.bukkit.block.Sign
 import org.bukkit.entity.Player
 
-@Suppress("UnstableApiUsage")
 class PaperCommandSender(
     val sourceStack: CommandSourceStack
 ) : SignCommandSender {
@@ -24,10 +24,9 @@ class PaperCommandSender(
         val player = sourceStack.sender as? Player ?: return null
 
         return withContext(PaperSignsPlugin.instance.bootstrap.platformDispatcher.getDispatcher()) {
-            val targetBlock =
-                player.getTargetBlockExact(maxDistance, FluidCollisionMode.NEVER) ?: return@withContext null
+            val targetBlock = player.getTargetBlockExact(maxDistance, FluidCollisionMode.NEVER)
 
-            if (targetBlock.state !is Sign) {
+            if (targetBlock == null || targetBlock.state !is Sign) {
                 player.sendMessage(MiniMessage.miniMessage().deserialize(SignCommandMessages.SIGN_NOT_FOUND))
                 return@withContext null
             }
@@ -36,7 +35,8 @@ class PaperCommandSender(
                 world = targetBlock.world.name,
                 x = targetBlock.x.toDouble(),
                 y = targetBlock.y.toDouble(),
-                z = targetBlock.z.toDouble()
+                z = targetBlock.z.toDouble(),
+                direction = targetBlock.blockData.resolveSignDirection()
             )
         }
     }
