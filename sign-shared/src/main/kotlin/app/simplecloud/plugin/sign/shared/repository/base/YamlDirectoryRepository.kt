@@ -38,6 +38,12 @@ abstract class YamlDirectoryRepository<I, E>(
 
     abstract fun getFileName(identifier: I): String
 
+    /**
+     * Override to reject an otherwise well-formed entity. Return an error message to
+     * reject it, or null to accept it.
+     */
+    protected open fun validate(entity: E): String? = null
+
     override fun delete(element: E): Boolean {
         val file = entities.keys.find { entities[it] == element } ?: return false
         return deleteFile(file)
@@ -68,6 +74,14 @@ abstract class YamlDirectoryRepository<I, E>(
             val loader = getOrCreateLoader(file)
             val node = loader.load(ConfigurationOptions.defaults())
             val entity = node.get(clazz) ?: return null
+
+            val validationError = validate(entity)
+            if (validationError != null) {
+                logger.error("Skipping invalid config file '{}': {}", file.name, validationError)
+                entities.remove(file)
+                return null
+            }
+
             entities[file] = entity
             entity
         } catch (ex: ConfigurateException) {

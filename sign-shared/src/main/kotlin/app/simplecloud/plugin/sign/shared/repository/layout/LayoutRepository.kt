@@ -8,8 +8,8 @@ import java.nio.file.Path
 @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
 class LayoutRepository(
     directoryPath: Path,
-
-) : YamlDirectoryRepository<String, LayoutConfig>(directoryPath, LayoutConfig::class.java) {
+    private val ruleRegistry: RuleRegistry,
+) : YamlDirectoryRepository<String, LayoutConfig>(directoryPath, LayoutConfig::class.java, ruleRegistry) {
 
     override fun save(element: LayoutConfig) {
         save(getFileName(element.name), element)
@@ -21,5 +21,12 @@ class LayoutRepository(
 
     override fun find(name: String): LayoutConfig? {
         return entities.values.find { it.name == name }
+    }
+
+    override fun validate(entity: LayoutConfig): String? {
+        if (ruleRegistry.getRule(entity.ruleName) == null) {
+            return "unknown rule '${entity.ruleName}'"
+        }
+        return null
     }
 }

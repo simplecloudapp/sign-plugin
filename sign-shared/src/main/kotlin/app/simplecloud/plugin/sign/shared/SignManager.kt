@@ -40,6 +40,7 @@ class SignManager<T : Any>(
     )
     private val layoutRepository = LayoutRepository(
         directoryPath.resolve("layouts"),
+        ruleRegistry,
     )
 
     private val serializers = TypeSerializerCollection.defaults().childBuilder().apply {
