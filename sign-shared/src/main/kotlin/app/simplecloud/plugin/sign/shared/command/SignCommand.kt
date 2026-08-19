@@ -8,6 +8,7 @@ import app.simplecloud.plugin.sign.shared.sender.SignCommandSender
 import app.simplecloud.plugin.sign.shared.service.SignService
 import app.simplecloud.plugin.sign.shared.utils.SignCommandMessages
 import app.simplecloud.plugin.sign.shared.utils.SignCommandPermission
+import com.google.common.base.Suppliers
 import com.google.common.cache.CacheBuilder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
@@ -40,6 +41,13 @@ class SignCommand<C : SignCommandSender, T>(
         .maximumSize(100)
         .expireAfterWrite(5, TimeUnit.MINUTES)
         .build<String, Component>()
+
+    private val groupSuggestionsSupplier = Suppliers.memoizeWithExpiration(
+        { fetchGroupSuggestions() }, 10, TimeUnit.SECONDS
+    )
+    private val persistentServerSuggestionsSupplier = Suppliers.memoizeWithExpiration(
+        { fetchPersistentServerSuggestions() }, 10, TimeUnit.SECONDS
+    )
 
     companion object {
         private const val LOCATIONS_PER_PAGE = 5
@@ -123,7 +131,7 @@ class SignCommand<C : SignCommandSender, T>(
                 commandScope.launch {
                     handleSignOperation(
                         context.sender(),
-                        context.get("group"),
+                        context["group"],
                         SignOperation.ADD
                     ) { location, group ->
                         executeAddGroupSign(location, group)
@@ -159,7 +167,7 @@ class SignCommand<C : SignCommandSender, T>(
             .commandDescription(Description.of("Unregister a SimpleCloud Sign"))
             .permission(SignCommandPermission.REMOVE.node)
             .handler { context ->
-                CoroutineScope(Dispatchers.IO).launch {
+                commandScope.launch {
                     handleSignOperation(
                         context.sender(),
                         operation = SignOperation.REMOVE
@@ -375,6 +383,7 @@ $navigationButtons
 
     private suspend fun executeAddGroupSign(location: T, group: String): CommandResult {
         return runCatching {
+
             if (signService.getCloudSign(location) != null) {
                 return CommandResult.Error(SignCommandMessages.SIGN_ALREADY_REGISTERED)
             }
@@ -542,7 +551,6 @@ $navigationButtons
             }
         }
 
-
     private fun registeredGroupSuggestions(): BlockingSuggestionProvider<C?> =
         BlockingSuggestionProvider { _, _ ->
             signService.getAllConfigs()
@@ -550,23 +558,23 @@ $navigationButtons
         }
 
     private fun groupSuggestions(): BlockingSuggestionProvider<C?> =
-        BlockingSuggestionProvider { _, _ ->
-            runBlocking {
-                signService.controllerApi.group().allGroups
-                    .await()
-                    .filterNot { it.type == GroupServerType.PROXY }
-                    .map { Suggestion.suggestion(it.name) }
-            }
-        }
+        BlockingSuggestionProvider { _, _ -> groupSuggestionsSupplier.get() }
 
     private fun persistentServerSuggestions(): BlockingSuggestionProvider<C?> =
-        BlockingSuggestionProvider { _, _ ->
-            runBlocking {
-                signService.controllerApi.persistentServer().getAllPersistentServers()
-                    .await()
-                    .map { Suggestion.suggestion(it.name) }
-            }
-        }
+        BlockingSuggestionProvider { _, _ -> persistentServerSuggestionsSupplier.get() }
+
+    private fun fetchGroupSuggestions(): List<Suggestion> = runBlocking {
+        signService.controllerApi.group().allGroups
+            .await()
+            .filterNot { it.type == GroupServerType.PROXY }
+            .map { Suggestion.suggestion(it.name) }
+    }
+
+    private fun fetchPersistentServerSuggestions(): List<Suggestion> = runBlocking {
+        signService.controllerApi.persistentServer().allPersistentServers
+            .await()
+            .map { Suggestion.suggestion(it.name) }
+    }
 
     fun cleanup() {
         commandScope.cancel()

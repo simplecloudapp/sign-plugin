@@ -2,20 +2,17 @@ package app.simplecloud.plugin.sign.shared.repository.base
 
 import app.simplecloud.plugin.sign.shared.rule.RuleRegistry
 import app.simplecloud.plugin.sign.shared.rule.SignRule
+import app.simplecloud.plugin.sign.shared.rule.serialize.SignRuleSerializer
 import io.leangen.geantyref.TypeToken
 import kotlinx.coroutines.*
-import org.spongepowered.configurate.ConfigurationNode
 import org.spongepowered.configurate.ConfigurationOptions
 import org.spongepowered.configurate.kotlin.objectMapperFactory
 import org.spongepowered.configurate.loader.ParsingException
-import org.spongepowered.configurate.serialize.SerializationException
-import org.spongepowered.configurate.serialize.TypeSerializer
 import org.spongepowered.configurate.serialize.TypeSerializerCollection
 import org.spongepowered.configurate.yaml.NodeStyle
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader
 import java.io.File
 import java.io.FileOutputStream
-import java.lang.reflect.Type
 import java.net.URL
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -106,21 +103,7 @@ abstract class YamlDirectoryRepository<I, E>(
                         serializers?.let { builder.registerAll(it) }
 
                         ruleRegistry?.let { registry ->
-                            builder.register(TypeToken.get(SignRule::class.java), object : TypeSerializer<SignRule> {
-                                override fun deserialize(type: Type, node: ConfigurationNode): SignRule {
-                                    val ruleName =
-                                        node.string ?: throw SerializationException("Rule name cannot be null")
-
-                                    return registry.getRule(ruleName)
-                                        ?: throw SerializationException("Unknown rule: $ruleName")
-                                }
-
-                                override fun serialize(type: Type, obj: SignRule?, node: ConfigurationNode) {
-                                    if (obj != null) {
-                                        node.set(obj.getRuleName())
-                                    }
-                                }
-                            })
+                            builder.register(TypeToken.get(SignRule::class.java), SignRuleSerializer(registry))
                         }
 
                         builder.registerAnnotatedObjects(objectMapperFactory())
