@@ -5,9 +5,10 @@ import app.simplecloud.plugin.sign.shared.rule.SignRule
 import app.simplecloud.plugin.sign.shared.rule.serialize.SignRuleSerializer
 import io.leangen.geantyref.TypeToken
 import kotlinx.coroutines.*
+import org.slf4j.LoggerFactory
+import org.spongepowered.configurate.ConfigurateException
 import org.spongepowered.configurate.ConfigurationOptions
 import org.spongepowered.configurate.kotlin.objectMapperFactory
-import org.spongepowered.configurate.loader.ParsingException
 import org.spongepowered.configurate.serialize.TypeSerializerCollection
 import org.spongepowered.configurate.yaml.NodeStyle
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader
@@ -28,6 +29,7 @@ abstract class YamlDirectoryRepository<I, E>(
     private val ruleRegistry: RuleRegistry? = null
 ) : LoadableRepository<I, E> {
 
+    private val logger = LoggerFactory.getLogger(javaClass)
     private val watchService = FileSystems.getDefault().newWatchService()
     private val loaders = mutableMapOf<File, YamlConfigurationLoader>()
     protected val entities = mutableMapOf<File, E>()
@@ -62,19 +64,15 @@ abstract class YamlDirectoryRepository<I, E>(
     }
 
     private fun load(file: File): E? {
-        try {
+        return try {
             val loader = getOrCreateLoader(file)
             val node = loader.load(ConfigurationOptions.defaults())
             val entity = node.get(clazz) ?: return null
             entities[file] = entity
-            return entity
-        } catch (ex: ParsingException) {
-            val existedBefore = entities.containsKey(file)
-            if (existedBefore) {
-                return null
-            }
-
-            return null
+            entity
+        } catch (ex: ConfigurateException) {
+            logger.error("Failed to load config file '{}': {}", file.name, ex.message)
+            null
         }
     }
 
