@@ -40,6 +40,7 @@ class SignManager<T : Any>(
     )
     private val layoutRepository = LayoutRepository(
         directoryPath.resolve("layouts"),
+        ruleRegistry,
     )
 
     private val serializers = TypeSerializerCollection.defaults().childBuilder().apply {
@@ -160,16 +161,16 @@ class SignManager<T : Any>(
 
     private fun startUpdateSignJob() {
         updateJob = scope.launch {
-            try {
-                while (isActive) {
+            while (isActive) {
+                try {
                     updateLayoutIndexes()
                     updateSigns()
-                    delay(UPDATE_INTERVAL)
+                } catch (exception: CancellationException) {
+                    throw exception
+                } catch (exception: Exception) {
+                    logger.error("Error in update job", exception)
                 }
-            } catch (exception: CancellationException) {
-                throw exception
-            } catch (exception: Exception) {
-                logger.error("Error in update job", exception)
+                delay(UPDATE_INTERVAL)
             }
         }
     }
@@ -264,6 +265,7 @@ class SignManager<T : Any>(
 
     private suspend fun updateLayoutIndexes() {
         layoutRepository.getAll().forEach { layout ->
+            if (layout.frames.isEmpty()) return@forEach
             if (state.shouldUpdateFrame(layout.name, layout.frameUpdateInterval)) {
                 state.updateFrameIndex(layout.name, layout.frames.size)
             }

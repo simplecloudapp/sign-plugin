@@ -26,6 +26,8 @@ object SignCommandMessages {
         "$PREFIX <color:#ffffff>Successfully removed <color:#fbbf24><amount></color> sign(s) of group <color:#fbbf24><group></color><color:#ffffff>.</color>"
     const val GENERAL_ERROR =
         "$PREFIX <color:#dc2626>An error occurred while processing your request.</color>"
+    const val TP_FAILED =
+        "$PREFIX <color:#dc2626>Unable to teleport you there.</color>"
     const val NO_PENDING_COMMAND =
         "$PREFIX <color:#dc2626>You have no pending command to confirm.</color>"
 

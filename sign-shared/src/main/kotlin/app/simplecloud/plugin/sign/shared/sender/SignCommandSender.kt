@@ -9,4 +9,6 @@ interface SignCommandSender {
 
     suspend fun getTargetBlock(maxDistance: Int): SignLocation?
 
+    suspend fun teleport(location: SignLocation): Boolean
+
 }

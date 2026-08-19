@@ -2,20 +2,18 @@ package app.simplecloud.plugin.sign.shared.repository.base
 
 import app.simplecloud.plugin.sign.shared.rule.RuleRegistry
 import app.simplecloud.plugin.sign.shared.rule.SignRule
+import app.simplecloud.plugin.sign.shared.rule.serialize.SignRuleSerializer
 import io.leangen.geantyref.TypeToken
 import kotlinx.coroutines.*
-import org.spongepowered.configurate.ConfigurationNode
+import org.slf4j.LoggerFactory
+import org.spongepowered.configurate.ConfigurateException
 import org.spongepowered.configurate.ConfigurationOptions
 import org.spongepowered.configurate.kotlin.objectMapperFactory
-import org.spongepowered.configurate.loader.ParsingException
-import org.spongepowered.configurate.serialize.SerializationException
-import org.spongepowered.configurate.serialize.TypeSerializer
 import org.spongepowered.configurate.serialize.TypeSerializerCollection
 import org.spongepowered.configurate.yaml.NodeStyle
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader
 import java.io.File
 import java.io.FileOutputStream
-import java.lang.reflect.Type
 import java.net.URL
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -31,6 +29,7 @@ abstract class YamlDirectoryRepository<I, E>(
     private val ruleRegistry: RuleRegistry? = null
 ) : LoadableRepository<I, E> {
 
+    private val logger = LoggerFactory.getLogger(javaClass)
     private val watchService = FileSystems.getDefault().newWatchService()
     private val loaders = mutableMapOf<File, YamlConfigurationLoader>()
     protected val entities = mutableMapOf<File, E>()
@@ -38,6 +37,12 @@ abstract class YamlDirectoryRepository<I, E>(
     private var serializers: TypeSerializerCollection? = null
 
     abstract fun getFileName(identifier: I): String
+
+    /**
+     * Override to reject an otherwise well-formed entity. Return an error message to
+     * reject it, or null to accept it.
+     */
+    protected open fun validate(entity: E): String? = null
 
     override fun delete(element: E): Boolean {
         val file = entities.keys.find { entities[it] == element } ?: return false
@@ -65,19 +70,23 @@ abstract class YamlDirectoryRepository<I, E>(
     }
 
     private fun load(file: File): E? {
-        try {
+        return try {
             val loader = getOrCreateLoader(file)
             val node = loader.load(ConfigurationOptions.defaults())
             val entity = node.get(clazz) ?: return null
-            entities[file] = entity
-            return entity
-        } catch (ex: ParsingException) {
-            val existedBefore = entities.containsKey(file)
-            if (existedBefore) {
+
+            val validationError = validate(entity)
+            if (validationError != null) {
+                logger.error("Skipping invalid config file '{}': {}", file.name, validationError)
+                entities.remove(file)
                 return null
             }
 
-            return null
+            entities[file] = entity
+            entity
+        } catch (ex: ConfigurateException) {
+            logger.error("Failed to load config file '{}': {}", file.name, ex.message)
+            null
         }
     }
 
@@ -106,21 +115,7 @@ abstract class YamlDirectoryRepository<I, E>(
                         serializers?.let { builder.registerAll(it) }
 
                         ruleRegistry?.let { registry ->
-                            builder.register(TypeToken.get(SignRule::class.java), object : TypeSerializer<SignRule> {
-                                override fun deserialize(type: Type, node: ConfigurationNode): SignRule {
-                                    val ruleName =
-                                        node.string ?: throw SerializationException("Rule name cannot be null")
-
-                                    return registry.getRule(ruleName)
-                                        ?: throw SerializationException("Unknown rule: $ruleName")
-                                }
-
-                                override fun serialize(type: Type, obj: SignRule?, node: ConfigurationNode) {
-                                    if (obj != null) {
-                                        node.set(obj.getRuleName())
-                                    }
-                                }
-                            })
+                            builder.register(TypeToken.get(SignRule::class.java), SignRuleSerializer(registry))
                         }
 
                         builder.registerAnnotatedObjects(objectMapperFactory())

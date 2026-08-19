@@ -4,7 +4,6 @@ import app.simplecloud.api.server.Server
 import app.simplecloud.plugin.sign.shared.SignManager
 import app.simplecloud.plugin.sign.shared.config.matcher.MatcherConfigEntry
 import app.simplecloud.plugin.sign.shared.config.matcher.MatcherType
-import app.simplecloud.plugin.sign.shared.rule.RuleRegistry
 import app.simplecloud.plugin.sign.shared.rule.SignRule
 import org.spongepowered.configurate.objectmapping.ConfigSerializable
 import org.spongepowered.configurate.objectmapping.meta.Setting
@@ -28,14 +27,6 @@ data class LayoutConfig(
     val rule: SignRule
         get() = SignManager.getRuleRegistry()?.getRule(ruleName)
             ?: throw SerializationException("Rule $ruleName not found")
-
-    companion object {
-        private var ruleRegistry: RuleRegistry? = null
-
-        fun setRegistry(registry: RuleRegistry) {
-            ruleRegistry = registry
-        }
-    }
 
     fun constructName(server: Server): String {
         val baseName = when {

@@ -7,6 +7,7 @@ import app.simplecloud.plugin.sign.paper.rule.PlayerRuleContext
 import app.simplecloud.plugin.sign.paper.sender.PaperCommandSender
 import app.simplecloud.plugin.sign.paper.sender.PaperCommandSenderMapper
 import app.simplecloud.plugin.sign.paper.service.PaperSignService
+import app.simplecloud.plugin.sign.paper.util.signFacing
 import app.simplecloud.plugin.sign.shared.CloudSign
 import app.simplecloud.plugin.sign.shared.SignManager
 import app.simplecloud.plugin.sign.shared.command.SignCommand
@@ -26,7 +27,6 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.block.Sign
 import org.bukkit.block.sign.Side
-import org.bukkit.block.data.Directional
 import org.bukkit.plugin.java.JavaPlugin
 import org.incendo.cloud.execution.ExecutionCoordinator
 import org.incendo.cloud.paper.PaperCommandManager
@@ -139,8 +139,8 @@ class PaperSignsPluginBootstrap : PluginBootstrap {
             return
         }
 
-        val directional = sign.block.blockData as? Directional ?: return
-        val behindBlock = sign.block.getRelative(directional.facing.oppositeFace)
+        val facing = sign.block.blockData.signFacing() ?: return
+        val behindBlock = sign.block.getRelative(facing.oppositeFace)
 
         if (behindBlock.type != material) {
             behindBlock.type = material

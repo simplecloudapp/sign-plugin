@@ -8,6 +8,7 @@ import app.simplecloud.plugin.sign.shared.sender.SignCommandSender
 import app.simplecloud.plugin.sign.shared.service.SignService
 import app.simplecloud.plugin.sign.shared.utils.SignCommandMessages
 import app.simplecloud.plugin.sign.shared.utils.SignCommandPermission
+import com.google.common.base.Suppliers
 import com.google.common.cache.CacheBuilder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
@@ -17,6 +18,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.incendo.cloud.Command
 import org.incendo.cloud.CommandManager
 import org.incendo.cloud.description.Description
+import org.incendo.cloud.parser.standard.DoubleParser
 import org.incendo.cloud.parser.standard.IntegerParser
 import org.incendo.cloud.parser.standard.StringParser
 import org.incendo.cloud.suggestion.BlockingSuggestionProvider
@@ -40,6 +42,13 @@ class SignCommand<C : SignCommandSender, T>(
         .maximumSize(100)
         .expireAfterWrite(5, TimeUnit.MINUTES)
         .build<String, Component>()
+
+    private val groupSuggestionsSupplier = Suppliers.memoizeWithExpiration(
+        { fetchGroupSuggestions() }, 10, TimeUnit.SECONDS
+    )
+    private val persistentServerSuggestionsSupplier = Suppliers.memoizeWithExpiration(
+        { fetchPersistentServerSuggestions() }, 10, TimeUnit.SECONDS
+    )
 
     companion object {
         private const val LOCATIONS_PER_PAGE = 5
@@ -72,6 +81,7 @@ class SignCommand<C : SignCommandSender, T>(
                 createAddPersistentCommand(baseCommand),
                 createRemoveCommand(baseCommand),
                 createRemoveGroupCommand(baseCommand),
+                createTpCommand(baseCommand),
             ).forEach { command(it) }
         }
     }
@@ -123,7 +133,7 @@ class SignCommand<C : SignCommandSender, T>(
                 commandScope.launch {
                     handleSignOperation(
                         context.sender(),
-                        context.get("group"),
+                        context["group"],
                         SignOperation.ADD
                     ) { location, group ->
                         executeAddGroupSign(location, group)
@@ -159,7 +169,7 @@ class SignCommand<C : SignCommandSender, T>(
             .commandDescription(Description.of("Unregister a SimpleCloud Sign"))
             .permission(SignCommandPermission.REMOVE.node)
             .handler { context ->
-                CoroutineScope(Dispatchers.IO).launch {
+                commandScope.launch {
                     handleSignOperation(
                         context.sender(),
                         operation = SignOperation.REMOVE
@@ -181,6 +191,30 @@ class SignCommand<C : SignCommandSender, T>(
             .permission(SignCommandPermission.REMOVE_GROUP.node)
             .handler { context ->
                 handleRemoveGroupCommand(context.sender(), context.getOrDefault("group", ""))
+            }
+
+    private fun createTpCommand(baseCommand: Command.Builder<C>) =
+        baseCommand.literal("tp")
+            .commandDescription(Description.of("Teleport to a registered CloudSign"))
+            .required("world", StringParser.stringParser())
+            .required("x", DoubleParser.doubleParser())
+            .required("y", DoubleParser.doubleParser())
+            .required("z", DoubleParser.doubleParser())
+            .permission(SignCommandPermission.TP.node)
+            .handler { context ->
+                commandScope.launch {
+                    val location = SignLocation(
+                        world = context["world"],
+                        x = context.get("x"),
+                        y = context.get("y"),
+                        z = context.get("z"),
+                    )
+
+                    val success = context.sender().teleport(location)
+                    if (!success) {
+                        sendMessage(context.sender(), SignCommandMessages.TP_FAILED)
+                    }
+                }
             }
 
     private fun handleListCommand(sender: SignCommandSender, group: String, page: Int = 1) {
@@ -243,7 +277,7 @@ class SignCommand<C : SignCommandSender, T>(
 
         val paginatedLocations = groupedLocations.subList(startIndex, endIndex)
         val locationInformation = paginatedLocations.joinToString("\n") { (group, location) ->
-            """<click:run_command:/sign tp ${location.world} ${location.x.toInt()} ${location.y.toInt()} ${location.z.toInt()}><hover:show_text:'Click to teleport'>
+            """<click:run_command:/sign tp ${location.world} ${location.x} ${location.y} ${location.z}><hover:show_text:'Click to teleport'>
 <color:#a8a8a8>└─ <color:#4ade80>Group:</color> <color:#ffffff>${group}</color>
    <color:#a8a8a8>├─</color> <color:#38bdf8>World:</color> <color:#ffffff>${location.world}</color>
    <color:#a8a8a8>├─</color> <color:#38bdf8>X:</color> <color:#ffffff>${location.x}</color>
@@ -308,7 +342,7 @@ $navigationButtons
 
         val paginatedLocations = locations.subList(startIndex, endIndex)
         val locationInformation = paginatedLocations.joinToString("\n") { location ->
-            """<click:run_command:/minecraft:tp ${location.x} ${location.y} ${location.z}><hover:show_text:'Click to teleport'>
+            """<click:run_command:/sign tp ${location.world} ${location.x} ${location.y} ${location.z}><hover:show_text:'Click to teleport'>
 <color:#a8a8a8>└─ <color:#4ade80>World:</color> <color:#ffffff>${location.world}</color>
    <color:#a8a8a8>├─</color> <color:#38bdf8>X:</color> <color:#ffffff>${location.x}</color>
    <color:#a8a8a8>├─</color> <color:#38bdf8>Y:</color> <color:#ffffff>${location.y}</color>
@@ -375,6 +409,7 @@ $navigationButtons
 
     private suspend fun executeAddGroupSign(location: T, group: String): CommandResult {
         return runCatching {
+
             if (signService.getCloudSign(location) != null) {
                 return CommandResult.Error(SignCommandMessages.SIGN_ALREADY_REGISTERED)
             }
@@ -542,7 +577,6 @@ $navigationButtons
             }
         }
 
-
     private fun registeredGroupSuggestions(): BlockingSuggestionProvider<C?> =
         BlockingSuggestionProvider { _, _ ->
             signService.getAllConfigs()
@@ -550,23 +584,23 @@ $navigationButtons
         }
 
     private fun groupSuggestions(): BlockingSuggestionProvider<C?> =
-        BlockingSuggestionProvider { _, _ ->
-            runBlocking {
-                signService.controllerApi.group().allGroups
-                    .await()
-                    .filterNot { it.type == GroupServerType.PROXY }
-                    .map { Suggestion.suggestion(it.name) }
-            }
-        }
+        BlockingSuggestionProvider { _, _ -> groupSuggestionsSupplier.get() }
 
     private fun persistentServerSuggestions(): BlockingSuggestionProvider<C?> =
-        BlockingSuggestionProvider { _, _ ->
-            runBlocking {
-                signService.controllerApi.persistentServer().getAllPersistentServers()
-                    .await()
-                    .map { Suggestion.suggestion(it.name) }
-            }
-        }
+        BlockingSuggestionProvider { _, _ -> persistentServerSuggestionsSupplier.get() }
+
+    private fun fetchGroupSuggestions(): List<Suggestion> = runBlocking {
+        signService.controllerApi.group().allGroups
+            .await()
+            .filterNot { it.type == GroupServerType.PROXY }
+            .map { Suggestion.suggestion(it.name) }
+    }
+
+    private fun fetchPersistentServerSuggestions(): List<Suggestion> = runBlocking {
+        signService.controllerApi.persistentServer().allPersistentServers
+            .await()
+            .map { Suggestion.suggestion(it.name) }
+    }
 
     fun cleanup() {
         commandScope.cancel()
