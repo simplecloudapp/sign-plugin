@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> **Moved:** Signs now lives in [simplecloud-plugins](https://github.com/simplecloudapp/simplecloud-plugins/tree/main/server/signs). This repository is archived.
+
 # Signs Plugin
 
 ![Banner][banner]
